@@ -3,7 +3,7 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:provider/provider.dart';
 import 'firebase_options.dart';
 import 'package:flutter/material.dart';
-import 'package:school_maps/screens/authpage.dart';
+import 'package:school_maps/screens/auth/auth_page.dart';
 import 'package:school_maps/presentation/authprovider.dart' as auth;
 
 void main() async{
@@ -32,10 +32,13 @@ class MyApp extends StatelessWidget {
             debugShowCheckedModeBanner: false,
             title: 'School Maps',
             theme: ThemeData(
-              colorScheme: ColorScheme.fromSeed(seedColor: Colors.black)
-            ),
-            home:AuthScreen()
+              useMaterial3: true,
+              colorSchemeSeed: Colors.blue,
+              brightness: Brightness.dark,
 
+
+          ),
+            home:AuthScreen()
             
           );
         }
@@ -51,6 +54,7 @@ class AuthScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+
     return StreamBuilder<User?>(
       stream: FirebaseAuth.instance.authStateChanges(), 
       builder: ( context, snapshot ){
@@ -69,10 +73,11 @@ class AuthScreen extends StatelessWidget {
         else{
 
           return const AuthPage();
-        }
-      });
-  }
 
+        }
+      }
+    );
+  }
 }
 
 class HomePage extends StatelessWidget {
@@ -80,6 +85,25 @@ class HomePage extends StatelessWidget {
   
     @override
     Widget build(BuildContext context) {
-      return Placeholder();
+
+      final auth.AuthProvider authProvider = context.watch<auth.AuthProvider>();
+      return Scaffold(
+        
+        body: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Text( 'Bienvenido' ),
+              ElevatedButton(
+                onPressed: (){
+                  authProvider.singOut();
+                }, 
+                child: Text( 'Cerrar sesion' )
+              )
+            ],
+
+          )
+        )
+      );
     }
   }

@@ -9,15 +9,20 @@ class AuthProvider extends ChangeNotifier{
 
   bool _isLogin = true;
   bool get isLogin => _isLogin;
+  bool isLoading = false;
 
   Future<User?> singIn( String email, String password ) async {
     try{
+
+      isLoading = true;
 
       UserCredential result = await _auth.signInWithEmailAndPassword(
         email: email, 
         password: password
       );
 
+      isLoading = false;
+      notifyListeners();
       return result.user;
 
     } catch( e ){
@@ -31,11 +36,14 @@ class AuthProvider extends ChangeNotifier{
   Future<User?> register( String email, String password ) async {
     try{
 
+      isLoading = true;
       UserCredential result = await _auth.createUserWithEmailAndPassword(
         email: email,
         password: password
       );
 
+      isLoading = false;
+      notifyListeners();
       return result.user;
     
     } catch( e ){
