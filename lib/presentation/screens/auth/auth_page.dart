@@ -44,105 +44,110 @@ class AuthPage extends StatelessWidget {
         
         body: Center(
           child: SingleChildScrollView(
-            child: Padding(
-              padding: const EdgeInsets.all(20.0),
-              child: Column(
-                  
-                mainAxisAlignment: MainAxisAlignment.center,
-
-                  
-                children: [
-
-                  Text( 
-                    authProvider.isLogin ? 'Iniciar sesion' : 'Registrarse', 
-                    style: TextStyle(
-                      fontSize: 30, 
-                      fontWeight: FontWeight.w500 
-                    ) 
-                  ),
-                  
-                  SizedBox(height: 50),
-
-                  CircleAvatar(
-                    backgroundImage: Image.network( 'https://i.pinimg.com/736x/0b/a4/12/0ba4126ee79560250648ebe4d7a43f01.jpg' ).image,
-                    radius: 100,
+            child: ConstrainedBox(
+              constraints: BoxConstraints(
+                maxWidth: 400,
+              ),
+              child: Padding(
+                padding: const EdgeInsets.all(20.0),
+                child: Column(
                     
-                  ),
-
-                  SizedBox(height: 50),
-
-                  TextField(
-                    controller: emailController,
-
-                    decoration: InputDecoration(
-                      
-                      hintText: 'Email',
-                      labelStyle: TextStyle( 
-                        color: Colors.black,
-                        overflow: TextOverflow.ellipsis,
-                        
-                      ),
-                      filled: true,
-                      fillColor: Colors.white,
-                      enabledBorder: OutlineInputBorder(
-                        borderSide: BorderSide( color: Colors.white ),
-                        borderRadius: BorderRadius.circular( 12 ),
-                      ),
-
-                      focusedBorder: OutlineInputBorder(
-                        borderSide: BorderSide( color: Colors.blueAccent ),
-                        borderRadius: BorderRadius.circular( 12 )
-                      ),
-
+                  mainAxisAlignment: MainAxisAlignment.center,
+              
+                    
+                  children: [
+              
+                    Text( 
+                      authProvider.isLogin ? 'Iniciar sesion' : 'Registrarse', 
+                      style: TextStyle(
+                        fontSize: 30, 
+                        fontWeight: FontWeight.w500 
+                      ) 
                     ),
-
-                  ),
-                  
-                  const SizedBox(height: 8),
-                  
-                  TextField(
-                    controller: passwordController,
-                    decoration: InputDecoration(
+                    
+                    SizedBox(height: 50),
+              
+                    CircleAvatar(
+                      backgroundImage: Image.network( 'https://i.pinimg.com/736x/0b/a4/12/0ba4126ee79560250648ebe4d7a43f01.jpg' ).image,
+                      radius: 100,
                       
-                      hintText: 'Contraseña',
-                      labelStyle: TextStyle( 
-                        color: Colors.black,
-                        overflow: TextOverflow.ellipsis,
-                        
-                      ),
-                      filled: true,
-                      fillColor: Colors.white,
-                      enabledBorder: OutlineInputBorder(
-                        borderSide: BorderSide( color: Colors.white ),
-                        borderRadius: BorderRadius.circular( 12 ),
-                      ),
-
-                      focusedBorder: OutlineInputBorder(
-                        borderSide: BorderSide( color: Colors.blueAccent ),
-                        borderRadius: BorderRadius.circular( 12 )
-                      ),
-
                     ),
-                    obscureText: true,
-                  ),
-                  
-                  const SizedBox(height: 16),
-                  
-                  ElevatedButton(
-                    onPressed: handleAuth,
-                    child: Text( authProvider.isLogin ? 'Iniciar sesión' : 'Registrarse' ),
-                  ),
-                  
-                  TextButton(
-                    onPressed: (){
-                      
-                      authProvider.toggleisLogin();
-                  
-                    },
-                    child: Text( authProvider.isLogin ? '¿No tienes cuenta? Registrate' : '¿Ya tienes cuenta? Inicia sesion')
-                  ),
-                  SizedBox(height: 50),
-                ],
+              
+                    SizedBox(height: 50),
+              
+                    TextField(
+                      controller: emailController,
+              
+                      decoration: InputDecoration(
+                        
+                        hintText: 'Email',
+                        labelStyle: TextStyle( 
+                          color: Colors.black,
+                          overflow: TextOverflow.ellipsis,
+                          
+                        ),
+                        filled: true,
+                        fillColor: Colors.white,
+                        enabledBorder: OutlineInputBorder(
+                          borderSide: BorderSide( color: Colors.white ),
+                          borderRadius: BorderRadius.circular( 12 ),
+                        ),
+              
+                        focusedBorder: OutlineInputBorder(
+                          borderSide: BorderSide( color: Colors.blueAccent ),
+                          borderRadius: BorderRadius.circular( 12 )
+                        ),
+              
+                      ),
+              
+                    ),
+                    
+                    const SizedBox(height: 8),
+                    
+                    TextField(
+                      controller: passwordController,
+                      decoration: InputDecoration(
+                        
+                        hintText: 'Contraseña',
+                        labelStyle: TextStyle( 
+                          color: Colors.black,
+                          overflow: TextOverflow.ellipsis,
+                          
+                        ),
+                        filled: true,
+                        fillColor: Colors.white,
+                        enabledBorder: OutlineInputBorder(
+                          borderSide: BorderSide( color: Colors.white ),
+                          borderRadius: BorderRadius.circular( 12 ),
+                        ),
+              
+                        focusedBorder: OutlineInputBorder(
+                          borderSide: BorderSide( color: Colors.blueAccent ),
+                          borderRadius: BorderRadius.circular( 12 )
+                        ),
+              
+                      ),
+                      obscureText: true,
+                    ),
+                    
+                    const SizedBox(height: 16),
+                    
+                    ElevatedButton(
+                      onPressed: handleAuth,
+                      child: Text( authProvider.isLogin ? 'Iniciar sesión' : 'Registrarse' ),
+                    ),
+                    
+                    TextButton(
+                      onPressed: (){
+                        
+                        authProvider.toggleisLogin();
+                    
+                      },
+                      child: Text( authProvider.isLogin ? '¿No tienes cuenta? Registrate' : '¿Ya tienes cuenta? Inicia sesion')
+                    ),
+                    SizedBox(height: 50),
+                  ],
+                ),
               ),
             ),
           ),
