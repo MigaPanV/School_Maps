@@ -12,17 +12,15 @@ class AuthProvider extends ChangeNotifier{
   bool isLoading = false;
 
   Future<User?> singIn( String email, String password ) async {
+    isLoading = true;
+    notifyListeners();
     try{
-
-      isLoading = true;
 
       UserCredential result = await _auth.signInWithEmailAndPassword(
         email: email, 
         password: password
       );
 
-      isLoading = false;
-      notifyListeners();
       return result.user;
 
     } catch( e ){
@@ -31,19 +29,22 @@ class AuthProvider extends ChangeNotifier{
       return null;
 
     }
+    finally{
+      isLoading = false;
+      notifyListeners();
+    }
   }
 
   Future<User?> register( String email, String password ) async {
     try{
 
       isLoading = true;
+      notifyListeners();
       UserCredential result = await _auth.createUserWithEmailAndPassword(
         email: email,
         password: password
       );
 
-      isLoading = false;
-      notifyListeners();
       return result.user;
     
     } catch( e ){
@@ -51,6 +52,11 @@ class AuthProvider extends ChangeNotifier{
       print( 'Error al registrase: $e' );
       return null;
 
+    }finally{
+
+      isLoading = false;
+      notifyListeners();
+      
     }
   }
 

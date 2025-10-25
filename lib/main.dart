@@ -3,8 +3,8 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:provider/provider.dart';
 import 'firebase_options.dart';
 import 'package:flutter/material.dart';
-import 'package:school_maps/screens/auth/auth_page.dart';
-import 'package:school_maps/presentation/authprovider.dart' as auth;
+import 'package:school_maps/presentation/screens/auth/auth_page.dart';
+import 'package:school_maps/presentation/provider/authprovider.dart' as auth;
 
 void main() async{
   WidgetsFlutterBinding.ensureInitialized();
@@ -32,12 +32,26 @@ class MyApp extends StatelessWidget {
             debugShowCheckedModeBanner: false,
             title: 'School Maps',
             theme: ThemeData(
-              useMaterial3: true,
-              colorSchemeSeed: Colors.blue,
-              brightness: Brightness.dark,
-
-
-          ),
+              primaryColor: const Color(0xFF0D47A1), // azul oscuro personalizado
+              scaffoldBackgroundColor: const Color(0xFF102A43), // color de fondo de toda la app
+              appBarTheme: const AppBarTheme(
+                backgroundColor: Color(0xFF0D47A1),
+                foregroundColor: Colors.white, // color del texto en el AppBar
+              ),
+              elevatedButtonTheme: ElevatedButtonThemeData(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Color(0xFF0D47A1),
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.all(Radius.circular(12)),
+                  ),
+                ),
+              ),
+              textTheme: const TextTheme(
+                bodyMedium: TextStyle(color: Colors.white),
+              ),
+              
+    ),            
             home:AuthScreen()
             
           );
