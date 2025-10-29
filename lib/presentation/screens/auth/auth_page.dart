@@ -68,7 +68,7 @@ class AuthPage extends StatelessWidget {
                     SizedBox(height: 50),
               
                     CircleAvatar(
-                      backgroundImage: Image.network( 'https://i.pinimg.com/736x/0b/a4/12/0ba4126ee79560250648ebe4d7a43f01.jpg' ).image,
+                      backgroundImage: Image.asset( 'assets/images/login.jpg' ).image,
                       radius: 100,
                       
                     ),
