@@ -50,7 +50,10 @@ class AuthProvider with ChangeNotifier {
       emailError = 'El correo es obligatorio';
     } else if (!email.contains('@')) {
       emailError = 'Correo no válido';
-    } else {
+    } else if (!email.contains('.com')) {
+      emailError = 'Correo no valido';
+    }
+    else{
       emailError = null;
     }
 
