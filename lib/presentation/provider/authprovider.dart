@@ -47,15 +47,20 @@ class AuthProvider with ChangeNotifier {
   // ===== VALIDACIÓN FINAL (AL PRESIONAR BOTÓN) =====
   bool validateTextField() {
     if (email.isEmpty) {
-      emailError = 'El correo es obligatorio';
-    } else if (!email.contains('@')) {
-      emailError = 'Correo no válido';
-    } else if (!email.contains('.com')) {
-      emailError = 'Correo no valido';
-    }
-    else{
-      emailError = null;
-    }
+  emailError = 'El correo es obligatorio';
+} else if (!email.contains('@')) {
+  emailError = 'Correo debe contener @';
+} else {
+  final parts = email.split('@');
+
+  if (parts.length != 2 || parts[0].isEmpty || parts[1].isEmpty) {
+    emailError = 'Correo no válido';
+  } else if (!parts[1].contains('.')) {
+    emailError = 'Correo debe contener un dominio válido (ej: gmail.com)';
+  } else {
+    emailError = null;
+  }
+}
 
     if (password.isEmpty) {
       passwordError = 'La contraseña es obligatoria';
