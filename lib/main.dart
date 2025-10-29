@@ -115,8 +115,8 @@ class HomePage extends StatelessWidget {
               Text( 'Bienvenido' ),
               ElevatedButton(
                 onPressed: (){
-                  authProvider.singOut();
-                }, 
+                  authProvider.signOut();
+                },
                 child: Text( 'Cerrar sesion' )
               )
             ],
