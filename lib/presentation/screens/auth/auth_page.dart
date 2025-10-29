@@ -1,156 +1,153 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:school_maps/presentation/provider/authprovider.dart';
-import 'package:school_maps/presentation/screens/auth/loading_screen.dart';
 
-class AuthPage extends StatelessWidget {
+class AuthPage extends StatefulWidget {
   const AuthPage({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  State<AuthPage> createState() => _AuthPageState();
+}
 
-    final TextEditingController emailController = TextEditingController();
-    final TextEditingController passwordController = TextEditingController();
-    
-    AuthProvider authProvider = Provider.of<AuthProvider>( context );
+class _AuthPageState extends State<AuthPage> {
+  final TextEditingController emailController = TextEditingController();
+  final TextEditingController passwordController = TextEditingController();
+
+  @override
+  Widget build(BuildContext context) {
+    final authProvider = Provider.of<AuthProvider>(context);
 
     Future<void> handleAuth() async {
+      authProvider.email = emailController.text.trim();
+      authProvider.password = passwordController.text.trim();
 
-      final email = emailController.text.trim();
-      final password = passwordController.text.trim();
+      if (!authProvider.validateTextField()) return;
 
-      if( authProvider.isLogin ){
-
-        if( email.isEmpty || password.isEmpty) return;
-        await authProvider.singIn(email, password);
-        
+      if (authProvider.isLogin) {
+        await authProvider.signIn();
       } else {
-
-        if( email.isEmpty || password.isEmpty) return;
-
-        await authProvider.register(email, password);
-        await authProvider.singOut();
-        authProvider.toggleisLogin();
-
+        await authProvider.register(authProvider.email, authProvider.password);
+        await authProvider.signOut();
+        authProvider.toggleIsLogin();
       }
     }
 
-    if( authProvider.isLoading ){
-      return LoadingScreen( text: authProvider.isLogin ? 'Iniciando sesion' : 'Registrando usuario' );
+    // Mantener el correo escrito después de error
+    if (authProvider.email.isNotEmpty && emailController.text.isEmpty) {
+      emailController.text = authProvider.email;
     }
 
     return SafeArea(
       child: Scaffold(
-        
-        body: Center(
-          child: SingleChildScrollView(
-            child: ConstrainedBox(
-              constraints: BoxConstraints(
-                maxWidth: 400,
-              ),
-              child: Padding(
-                padding: const EdgeInsets.all(20.0),
-                child: Column(
-                    
-                  mainAxisAlignment: MainAxisAlignment.center,
-              
-                    
-                  children: [
-              
-                    Text( 
-                      authProvider.isLogin ? 'Iniciar sesion' : 'Registrarse', 
-                      style: TextStyle(
-                        fontSize: 30, 
-                        fontWeight: FontWeight.w500 
-                      ) 
-                    ),
-                    
-                    SizedBox(height: 50),
-              
-                    CircleAvatar(
-                      backgroundImage: Image.network( 'https://i.pinimg.com/736x/0b/a4/12/0ba4126ee79560250648ebe4d7a43f01.jpg' ).image,
-                      radius: 100,
-                      
-                    ),
-              
-                    SizedBox(height: 50),
-              
-                    TextField(
-                      controller: emailController,
-              
-                      decoration: InputDecoration(
-                        
-                        hintText: 'Email',
-                        labelStyle: TextStyle( 
-                          color: Colors.black,
-                          overflow: TextOverflow.ellipsis,
-                          
+        body: Stack(
+          children: [
+            Center(
+              child: SingleChildScrollView(
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 400),
+                  child: Padding(
+                    padding: const EdgeInsets.all(20.0),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Text(
+                          authProvider.isLogin ? 'Iniciar sesión' : 'Registrarse',
+                          style: const TextStyle(fontSize: 30, fontWeight: FontWeight.w500),
                         ),
-                        filled: true,
-                        fillColor: Colors.white,
-                        enabledBorder: OutlineInputBorder(
-                          borderSide: BorderSide( color: Colors.white ),
-                          borderRadius: BorderRadius.circular( 12 ),
+                        const SizedBox(height: 50),
+                        const CircleAvatar(
+                          backgroundImage: NetworkImage(
+                            'https://i.pinimg.com/736x/0b/a4/12/0ba4126ee79560250648ebe4d7a43f01.jpg',
+                          ),
+                          radius: 100,
                         ),
-              
-                        focusedBorder: OutlineInputBorder(
-                          borderSide: BorderSide( color: Colors.blueAccent ),
-                          borderRadius: BorderRadius.circular( 12 )
+                        const SizedBox(height: 50),
+                        TextField(
+                          controller: emailController,
+                          onChanged: (value) {
+                            authProvider.localValidateEmail(value);
+                          },
+                          decoration: InputDecoration(
+                            hintText: 'Correo electrónico',
+                            errorText: authProvider.emailError,
+                            filled: true,
+                            fillColor: Colors.white,
+                            enabledBorder: OutlineInputBorder(
+                              borderSide: const BorderSide(color: Colors.white),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            focusedBorder: OutlineInputBorder(
+                              borderSide: const BorderSide(color: Colors.blueAccent),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                          ),
                         ),
-              
-                      ),
-              
+                        const SizedBox(height: 8),
+
+                        TextField(
+                          controller: passwordController,
+                          obscureText: true,
+                          onChanged: (value) {
+                            authProvider.localValidatePassword(value);
+                          },
+                          decoration: InputDecoration(
+                            hintText: 'Contraseña',
+                            errorText: authProvider.passwordError,
+                            filled: true,
+                            fillColor: Colors.white,
+                            enabledBorder: OutlineInputBorder(
+                              borderSide: const BorderSide(color: Colors.white),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            focusedBorder: OutlineInputBorder(
+                              borderSide: const BorderSide(color: Colors.blueAccent),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                          ),
+                        ),
+
+                        const SizedBox(height: 8),
+
+                        if (authProvider.generalError != null)
+                          Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 6.0),
+                            child: Text(
+                              authProvider.generalError!,
+                              style: const TextStyle(color: Colors.red, fontSize: 14),
+                            ),
+                          ),
+
+                        const SizedBox(height: 16),
+
+                        ElevatedButton(
+                          onPressed: handleAuth,
+                          child: Text(authProvider.isLogin ? 'Iniciar sesión' : 'Registrarse'),
+                        ),
+
+                        TextButton(
+                          onPressed: authProvider.toggleIsLogin,
+                          child: Text(
+                            authProvider.isLogin
+                                ? '¿No tienes cuenta? Regístrate'
+                                : '¿Ya tienes cuenta? Inicia sesión',
+                          ),
+                        ),
+                        const SizedBox(height: 50),
+                      ],
                     ),
-                    
-                    const SizedBox(height: 8),
-                    
-                    TextField(
-                      controller: passwordController,
-                      decoration: InputDecoration(
-                        
-                        hintText: 'Contraseña',
-                        labelStyle: TextStyle( 
-                          color: Colors.black,
-                          overflow: TextOverflow.ellipsis,
-                          
-                        ),
-                        filled: true,
-                        fillColor: Colors.white,
-                        enabledBorder: OutlineInputBorder(
-                          borderSide: BorderSide( color: Colors.white ),
-                          borderRadius: BorderRadius.circular( 12 ),
-                        ),
-              
-                        focusedBorder: OutlineInputBorder(
-                          borderSide: BorderSide( color: Colors.blueAccent ),
-                          borderRadius: BorderRadius.circular( 12 )
-                        ),
-              
-                      ),
-                      obscureText: true,
-                    ),
-                    
-                    const SizedBox(height: 16),
-                    
-                    ElevatedButton(
-                      onPressed: handleAuth,
-                      child: Text( authProvider.isLogin ? 'Iniciar sesión' : 'Registrarse' ),
-                    ),
-                    
-                    TextButton(
-                      onPressed: (){
-                        
-                        authProvider.toggleisLogin();
-                    
-                      },
-                      child: Text( authProvider.isLogin ? '¿No tienes cuenta? Registrate' : '¿Ya tienes cuenta? Inicia sesion')
-                    ),
-                    SizedBox(height: 50),
-                  ],
+                  ),
                 ),
               ),
             ),
-          ),
+
+            if (authProvider.isLoading)
+              Container(
+                color: Colors.black54,
+                child: const Center(
+                  child: CircularProgressIndicator(),
+                ),
+              ),
+          ],
         ),
       ),
     );
