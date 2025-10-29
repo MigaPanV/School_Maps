@@ -55,11 +55,10 @@ class _AuthPageState extends State<AuthPage> {
                           style: const TextStyle(fontSize: 30, fontWeight: FontWeight.w500),
                         ),
                         const SizedBox(height: 50),
-                        const CircleAvatar(
-                          backgroundImage: NetworkImage(
-                            'https://i.pinimg.com/736x/0b/a4/12/0ba4126ee79560250648ebe4d7a43f01.jpg',
-                          ),
+                        CircleAvatar(
+                          backgroundImage: Image.asset( 'assets/images/login.jpg' ).image,
                           radius: 100,
+                      
                         ),
                         const SizedBox(height: 50),
                         TextField(
