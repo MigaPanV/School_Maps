@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "413426935515",
+    "project_id": "school-maps-e69f3",
+    "storage_bucket": "school-maps-e69f3.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:413426935515:android:13d412bd7967fb44e90efe",
+        "android_client_info": {
+          "package_name": "com.example.school_maps"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAzOX3ZIFVWnD7gDB4eqgVlcNqf013btD0"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
