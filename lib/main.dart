@@ -1,6 +1,7 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:provider/provider.dart';
+import 'package:school_maps/presentation/provider/rector_provider.dart';
 import 'package:school_maps/presentation/screens/rector/rector_page.dart';
 import 'firebase_options.dart';
 import 'package:flutter/material.dart';
@@ -23,7 +24,8 @@ class MyApp extends StatelessWidget {
 
     return MultiProvider(
       providers: [
-        ChangeNotifierProvider( create: (_) => auth.AuthProvider())
+        ChangeNotifierProvider( create: (_) => auth.AuthProvider()),
+        ChangeNotifierProvider( create: (_) => RectorProvider())
       ],
       child: Consumer<auth.AuthProvider>(
         builder: ( context, authprovider, child ) {
