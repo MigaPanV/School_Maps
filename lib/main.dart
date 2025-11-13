@@ -4,6 +4,8 @@ import 'package:provider/provider.dart';
 import 'package:school_maps/presentation/provider/firestore_provider.dart';
 import 'package:school_maps/presentation/provider/rector_provider.dart';
 import 'package:school_maps/presentation/screens/rector/rector_page.dart';
+import 'package:school_maps/presentation/screens/conductor/conductor_page.dart';
+import 'package:school_maps/presentation/screens/padre/padre_page.dart';
 import 'firebase_options.dart';
 import 'package:flutter/material.dart';
 import 'package:school_maps/presentation/screens/auth/auth_page.dart';
@@ -102,7 +104,7 @@ class AuthScreen extends StatelessWidget {
 
         if( snapshot.hasData ){
 
-          return RectorScreen();
+          return PadreScreen();
 
         }
         else{
