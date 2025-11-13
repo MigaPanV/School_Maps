@@ -1,6 +1,7 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:provider/provider.dart';
+import 'package:school_maps/presentation/provider/firestore_provider.dart';
 import 'package:school_maps/presentation/provider/rector_provider.dart';
 import 'package:school_maps/presentation/screens/rector/rector_page.dart';
 import 'firebase_options.dart';
@@ -25,7 +26,8 @@ class MyApp extends StatelessWidget {
     return MultiProvider(
       providers: [
         ChangeNotifierProvider( create: (_) => auth.AuthProvider()),
-        ChangeNotifierProvider( create: (_) => RectorProvider())
+        ChangeNotifierProvider( create: (_) => RectorProvider()),
+        ChangeNotifierProvider( create: (_) => FirestoreProvider())
       ],
       child: Consumer<auth.AuthProvider>(
         builder: ( context, authprovider, child ) {
@@ -35,12 +37,13 @@ class MyApp extends StatelessWidget {
             debugShowCheckedModeBanner: false,
             title: 'School Maps',
             theme: ThemeData(
-              primaryColor: const Color(0xFF0D47A1), // azul oscuro personalizado
-              scaffoldBackgroundColor: const Color(0xFF102A43), // color de fondo de toda la app
+              primaryColor: const Color(0xFF0D47A1),
+              scaffoldBackgroundColor: const Color(0xFF102A43),
               appBarTheme: const AppBarTheme(
                 backgroundColor: Color(0xFF102A43),
-                foregroundColor: Colors.white, // color del texto en el AppBar
+                foregroundColor: Colors.white,
               ),
+
               elevatedButtonTheme: ElevatedButtonThemeData(
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Color(0xFF0D47A1),
@@ -50,6 +53,11 @@ class MyApp extends StatelessWidget {
                   ),
                 ),
               ),
+              checkboxTheme: CheckboxThemeData(
+                fillColor: WidgetStateProperty<Color?>.fromMap(<WidgetStatesConstraint, Color?>{
+                  WidgetState.selected: Color( 0xFF0D47A1 ),
+                })
+              ),
               textButtonTheme: TextButtonThemeData(
                 style: TextButton.styleFrom(
                   foregroundColor: Colors.white
@@ -58,10 +66,15 @@ class MyApp extends StatelessWidget {
               textTheme: const TextTheme(
                 bodyMedium: TextStyle(color: Colors.white),
               ),
-              
-    ),            
-            home:AuthScreen()
-            
+
+              menuTheme: MenuThemeData(
+                style: MenuStyle(
+                  alignment: AlignmentGeometry.center,
+                  backgroundColor: WidgetStatePropertyAll<Color>(Color(0xFF0D47A1)),
+                )
+              )
+            ),
+            home:AuthScreen()            
           );
         }
       )
@@ -123,7 +136,6 @@ class HomePage extends StatelessWidget {
                 child: Text( 'Cerrar sesion' )
               )
             ],
-
           )
         )
       );
