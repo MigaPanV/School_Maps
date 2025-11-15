@@ -104,7 +104,7 @@ class AuthScreen extends StatelessWidget {
 
         if( snapshot.hasData ){
 
-          return PadreScreen();
+          return RectorScreen();
 
         }
         else{

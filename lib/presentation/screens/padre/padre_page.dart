@@ -86,19 +86,19 @@ class _PadreScreenState extends State<PadreScreen> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               children: [
-                FilledButton(
+                ElevatedButton(
                   onPressed: () {
                     // Acción del botón "Enviar"
                     Navigator.of(context).pop();
                   },
                   child: const Text('Enviar'),
                 ),
-                FilledButton.tonal(
+                TextButton(
                   onPressed: () {
                     // Acción del botón "Cerrar"
                     Navigator.of(context).pop();
                   },
-                  child: const Text('Cerrar'),
+                  child: const Text('Cerrar', style: TextStyle( color: Colors.black)),
                 ),
               ],
             ),
@@ -145,7 +145,7 @@ class _PadreScreenState extends State<PadreScreen> {
             Center(
               child: SizedBox(
                 width: MediaQuery.of(context).size.width * 0.4,
-                child: FilledButton(
+                child: ElevatedButton(
                   onPressed: () => _mostrarVentanaReporte(context),
                   child: const Text('Reportar'),
                 ),

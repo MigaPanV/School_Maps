@@ -24,12 +24,12 @@ class _ConductorFinRutaState extends State<ConductorFinRuta> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Center(
-          child: Text(
-            'Reportes Fin de Ruta',
-            style: TextStyle(fontSize: 20, fontWeight: FontWeight.w600),
-          ),
+        centerTitle: true,
+        title: Text(
+          'Reportes Fin de Ruta',
+          style: TextStyle(fontSize: 20, fontWeight: FontWeight.w600),
         ),
+        
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
           onPressed: () => Navigator.pop(context),

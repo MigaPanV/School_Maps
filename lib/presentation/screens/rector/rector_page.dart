@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:school_maps/presentation/provider/auth_provider.dart';
 import 'package:school_maps/presentation/provider/rector_provider.dart';
+import 'package:school_maps/presentation/screens/rector/add_padre.dart';
 import 'package:school_maps/presentation/screens/rector/crear_ruta.dart';
 
 class RectorScreen extends StatelessWidget {
@@ -87,14 +88,42 @@ class RectorScreen extends StatelessWidget {
                                   ),
               
                                   MenuItemButton(
-                                    onPressed: (){},
+                                    onPressed: (){
+                                      // Navigator.push( context, MaterialPageRoute<void>(
+                                      //   builder: (BuildContext context) => EditarRuta()
+                                      //   )
+                                      // );
+                                    },
                                     child: Text( 'Editar ruta', style: styleText ),
                                   ),
                                   
                                   MenuItemButton(
-                                    onPressed: (){},
+                                    onPressed: (){
+                                      // Navigator.push( context, MaterialPageRoute<void>(
+                                      //   builder: (BuildContext context) => AddConductor()
+                                      //   )
+                                      // );
+                                    },
                                     child: Text( 'Añadir condutor', style: styleText ),
-                                  ), 
+                                  ),
+                                  MenuItemButton(
+                                    onPressed: (){
+                                      Navigator.push( context, MaterialPageRoute<void>(
+                                        builder: (BuildContext context) => AddPadre()
+                                        )
+                                      );
+                                    },
+                                    child: Text( 'Añadir Acudiente', style: styleText ),
+                                  ),
+                                  MenuItemButton(
+                                    onPressed: (){
+                                      // Navigator.push( context, MaterialPageRoute<void>(
+                                      //   builder: (BuildContext context) => AddEstudiante()
+                                      //   )
+                                      // );
+                                    },
+                                    child: Text( 'Añadir estudiante', style: styleText ),
+                                  ),
                                   MenuItemButton(
                                     onPressed: (){
                                       authProvider.signOut();
