@@ -16,7 +16,7 @@ class DatabasePadreModel{
     required this.nombrePadre,
     required this.documento,
     required this.correo,
-    this.rol = 'acudiente',
+    this.rol = 'Padre',
     required this.direccion,
     required this.documentoHijo,
     required this.placaRutaAsignada

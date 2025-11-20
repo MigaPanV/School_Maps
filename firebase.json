@@ -1,1 +1,37 @@
-{"flutter":{"platforms":{"android":{"default":{"projectId":"school-maps-e69f3","appId":"1:413426935515:android:13d412bd7967fb44e90efe","fileOutput":"android/app/google-services.json"}},"dart":{"lib/firebase_options.dart":{"projectId":"school-maps-e69f3","configurations":{"android":"1:413426935515:android:13d412bd7967fb44e90efe","ios":"1:413426935515:ios:44f10b9ea51ffd1ee90efe","web":"1:413426935515:web:71f4d8a546c5b3bbe90efe"}}}}}}
+{
+  "flutter": {
+    "platforms": {
+      "android": {
+        "default": {
+          "projectId": "school-maps-e69f3",
+          "appId": "1:413426935515:android:13d412bd7967fb44e90efe",
+          "fileOutput": "android/app/google-services.json"
+        }
+      },
+      "dart": {
+        "lib/firebase_options.dart": {
+          "projectId": "school-maps-e69f3",
+          "configurations": {
+            "android": "1:413426935515:android:13d412bd7967fb44e90efe",
+            "ios": "1:413426935515:ios:44f10b9ea51ffd1ee90efe",
+            "web": "1:413426935515:web:71f4d8a546c5b3bbe90efe"
+          }
+        }
+      }
+    }
+  },
+  "functions": [
+    {
+      "source": "functions",
+      "codebase": "default",
+      "disallowLegacyRuntimeConfig": true,
+      "ignore": [
+        "node_modules",
+        ".git",
+        "firebase-debug.log",
+        "firebase-debug.*.log",
+        "*.local"
+      ]
+    }
+  ]
+}

@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:school_maps/presentation/widget/shared/custom_profile.dart';
+import 'package:provider/provider.dart';
+import 'package:school_maps/presentation/provider/auth_provider.dart';
 
 class PadreScreen extends StatefulWidget {
   const PadreScreen({super.key});
@@ -13,6 +15,8 @@ class _PadreScreenState extends State<PadreScreen> {
   String? selectedReporte;
 
   void _mostrarVentanaReporte(BuildContext context) {
+
+    
     showDialog(
       context: context,
       builder: (BuildContext context) {
@@ -111,6 +115,9 @@ class _PadreScreenState extends State<PadreScreen> {
 
   @override
   Widget build(BuildContext context) {
+
+    final authProvider = Provider.of<AuthProvider>(context);
+    
     return SafeArea(
       child: Scaffold(
         appBar: AppBar(
@@ -167,6 +174,14 @@ class _PadreScreenState extends State<PadreScreen> {
               ),
             ),
             const SizedBox(height: 40),
+
+            ElevatedButton(
+                  onPressed: () {
+                    authProvider.signOut();
+                  },
+                  child: const Text('cerrar sesión'),
+                ),
+
           ],
         ),
       ),

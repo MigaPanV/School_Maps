@@ -15,7 +15,7 @@ class DatabaseConductorModel{
     required this.nombreConductor,
     required this.documento,
     required this.correo,
-    required this.rol,
+    this.rol = 'Conductor',
     required this.vencimientoLicencia,
     required this.placaRutaAsignada
 

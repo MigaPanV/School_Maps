@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:school_maps/domain/entities/padre.dart';
 import 'package:school_maps/presentation/provider/firestore_provider.dart';
+import 'package:school_maps/presentation/screens/auth/loading_screen.dart';
 import 'package:school_maps/presentation/widget/shared/custom_text_fields.dart';
 
 class AddPadre extends StatelessWidget {
@@ -14,6 +15,36 @@ class AddPadre extends StatelessWidget {
 
     const double maxContentWidth = 800;
 
+    if(!firestore.isLoading && firestore.isUploaded){
+      return SafeArea(
+        child: Scaffold(
+          body: Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text('Datos cargados', style: TextStyle(fontSize: 30, fontWeight: FontWeight.w500)),
+                    Icon(Icons.check_circle, color: Colors.green, size: 50),
+                  ],
+                ),
+                ElevatedButton(
+                  onPressed: (){
+                            
+                    Navigator.pop(context);
+                    firestore.isUploaded = false;
+                  }, 
+                  child: Text('Continuar')
+                )
+              ],
+            )
+            
+          )
+        ),
+      );
+    }
+
     return SafeArea(
       child: Scaffold(
         appBar: AppBar(
@@ -21,7 +52,9 @@ class AddPadre extends StatelessWidget {
           title: Text( 'Añadir Acudiente' ),
 
         ),
-        body: LayoutBuilder(
+        body: firestore.isLoading == true 
+        ? LoadingScreen(text: 'Subiendo datos') 
+        : LayoutBuilder(
           builder: ( context, constraints ){
             return SingleChildScrollView(
               child: ConstrainedBox(
@@ -65,7 +98,7 @@ class AddPadre extends StatelessWidget {
                                       labeltext: 'Ingrese documento acudiente',
                                       onChanged: firestore.getDocumentoAcudiente,
                                     ),
-
+                                    
                                     SizedBox(height: 20),
 
                                     CustomTextField(
@@ -73,8 +106,7 @@ class AddPadre extends StatelessWidget {
                                       labeltext: 'Ingrese correo acudiente',
                                       onChanged: firestore.getCorreoAcudiente,
                                     ),
-
-                                    SizedBox(height: 20),
+                                SizedBox(height: 20),
 
                                     CustomTextField(
                                       errorText: firestore.errorDireccion, 
@@ -82,23 +114,18 @@ class AddPadre extends StatelessWidget {
                                       onChanged: firestore.getDireccion,
                                     ),
 
-                                    SizedBox(height: 20),
+                                SizedBox(height: 20),
 
-                                    Text( 'Estudiante' ),
-
-                                    SizedBox(height: 20),
+                                Text( 'Estudiante' ),
 
                                     CustomTextField(
                                       errorText: firestore.errorDocumentoHijo, 
                                       labeltext: 'Ingrese documento estudiante',
                                       onChanged: firestore.getDocumentoHijo,
                                     ),
-
-                                    SizedBox(height: 20),
-                                    
-                                    Text( 'Bus' ),
-
-                                    SizedBox(height: 20),
+                                SizedBox(height: 20),
+                                
+                                Text( 'Bus' ),
 
                                     CustomTextField(
                                       errorText: firestore.errorPlaca, 
@@ -110,7 +137,8 @@ class AddPadre extends StatelessWidget {
                                 
                                     ElevatedButton(
                                     onPressed: () {
-                                      firestore.addPadre();
+                                      firestore.addDocumentoHijo();
+                                      await firestore.addPadre();
                                       },
                                       child: Text('Guardar'),
                                       ),
@@ -122,13 +150,12 @@ class AddPadre extends StatelessWidget {
                                           ),
                                         ],
                                       )
-                                
-                                  
-                                
                                 ),
-                              ),
+                              ],
                             ),
                           ),
+                        ),
+                      ),
                     ),
                   ),
                 ),
