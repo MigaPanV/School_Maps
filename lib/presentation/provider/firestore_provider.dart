@@ -1,92 +1,123 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
-import 'package:school_maps/domain/entities/padre.dart';
 import 'package:school_maps/infrastruture/model/database_padre_model.dart';
 
-class FirestoreProvider extends ChangeNotifier{
+class FirestoreProvider extends ChangeNotifier {
 
   final FirebaseFirestore firestore = FirebaseFirestore.instance;
 
-  String nombrePadre = ''; 
-  int? documentoPadre = 0 ;
-  String correo = ''; 
-  String direccion = ''; 
-  List<int>? documentoHijo = [] ;
+  String nombrePadre = '';
+  String documentoPadre = '';
+  String correo = '';
+  String direccion = '';
+  String documentoHijo = '';
   String placaRutaAsignada = '';
+  
+  String? errorNombre;
+  String? errorDocumento;
+  String? errorCorreo;
+  String? errorDireccion;
+  String? errorDocumentoHijo;
+  String? errorPlaca;
+  String? errorGeneral;
 
-  String? errorName;
+  bool isLoading = false;
 
-  void getNombreAcudiente( String value ){
-    nombrePadre = value;
-    errorName = null;
+  void getNombreAcudiente(String value) {
+    nombrePadre = value.trim();
+    errorNombre = null;
     notifyListeners();
   }
 
-  void getDocumentoAcudiente( String value ){
-    documentoPadre = int.tryParse( value );
-    errorName = null;
+  void getDocumentoAcudiente(String value) {
+    documentoPadre = value.trim();
+    errorDocumento = null;
     notifyListeners();
   }
-  void getCorreoAcudiente( String value ){
-    correo = value;
-    errorName = null;
-    notifyListeners();
-  }
-  void getDireccion( String value ){
-    direccion = value;
-    errorName = null;
-    notifyListeners();
-  }
-  void getDocumentoHijo( String value ){
 
-    final entero = int.tryParse( value );
+  void getCorreoAcudiente(String value) {
+    correo = value.trim();
+    errorCorreo = null;
+    notifyListeners();
+  }
 
-    if( entero != null ){
-      documentoHijo?.add( entero );
-      errorName = null;
+  void getDireccion(String value) {
+    direccion = value.trim();
+    errorDireccion = null;
+    notifyListeners();
+  }
+
+  void getDocumentoHijo(String value) {
+    documentoHijo = value.trim();
+    errorDocumentoHijo = null;
+    notifyListeners();
+  }
+
+  void getPlaca(String value) {
+    placaRutaAsignada = value.trim();
+    errorPlaca = null;
+    notifyListeners();
+  }
+
+  bool validateForm() {
+    bool valid = true;
+
+    if (nombrePadre.isEmpty) {
+      errorNombre = "Campo requerido";
+      valid = false;
     }
-    else{
-      errorName = 'Documento de invalido';
+    if (documentoPadre.isEmpty) {
+      errorDocumento = "Campo requerido";
+      valid = false;
     }
+    if (correo.isEmpty || !correo.contains("@")) {
+      errorCorreo = "Correo inválido";
+      valid = false;
+    }
+    if (direccion.isEmpty) {
+      errorDireccion = "Campo requerido";
+      valid = false;
+    }
+    if (documentoHijo.isEmpty) {
+      errorDocumentoHijo = "Campo requerido";
+      valid = false;
+    }
+    if (placaRutaAsignada.isEmpty) {
+      errorPlaca = "Campo requerido";
+      valid = false;
+    }
+
     notifyListeners();
-    
-  }
-  void getPlaca( String value ){
-    placaRutaAsignada = value;
-    errorName = null;
-    notifyListeners();
+    return valid;
   }
 
   Future<void> addPadre() async {
-    try{
+    if (!validateForm()) return;
+
+    try {
+      isLoading = true;
+      errorGeneral = null;
+      notifyListeners();
 
       final padre = DatabasePadreModel(
-        
-        nombrePadre: nombrePadre, 
-        documento: documentoPadre!, 
-        correo: correo,  
-        direccion: direccion, 
-        documentoHijo: documentoHijo!, 
-        placaRutaAsignada: placaRutaAsignada
-
+        nombrePadre: nombrePadre,
+        documento: int.parse(documentoPadre),
+        correo: correo,
+        direccion: direccion,
+        documentoHijo: [int.parse(documentoHijo)],
+        placaRutaAsignada: placaRutaAsignada,
       );
 
-      await firestore.collection( 'Acudientes' ).doc( documentoPadre.toString() ).set( padre.toFirebase() );
+      await firestore
+          .collection('Acudientes')
+          .doc(documentoPadre)
+          .set(padre.toFirebase());
 
-    }on FirebaseException catch  (e){
-      debugPrint( 'Error: ${e.message}'  );
+    } on FirebaseException catch (e) {
+      errorGeneral = e.message ?? "Error al guardar en la base de datos";
+    } finally {
+      isLoading = false;
+      notifyListeners();
     }
-  }
-
-  Future<void> addEstudiante() async {
-
-  }
-
-  Future<void> addConductor() async {
-
-  }
-
-  Future<void> addBus() async {
-
   }
 }

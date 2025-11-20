@@ -53,7 +53,7 @@ class AddPadre extends StatelessWidget {
                                     SizedBox( height: 20 ),
 
                                     CustomTextField(
-                                      errorText: null, 
+                                      errorText: firestore.errorNombre,
                                       labeltext: 'Ingrese nombre acudiente',
                                       onChanged: firestore.getNombreAcudiente,
                                     ),
@@ -61,7 +61,7 @@ class AddPadre extends StatelessWidget {
                                     SizedBox(height: 20), 
 
                                     CustomTextField(
-                                      errorText: null, 
+                                      errorText: firestore.errorDocumento, 
                                       labeltext: 'Ingrese documento acudiente',
                                       onChanged: firestore.getDocumentoAcudiente,
                                     ),
@@ -69,7 +69,7 @@ class AddPadre extends StatelessWidget {
                                     SizedBox(height: 20),
 
                                     CustomTextField(
-                                      errorText: null, 
+                                      errorText: firestore.errorCorreo,
                                       labeltext: 'Ingrese correo acudiente',
                                       onChanged: firestore.getCorreoAcudiente,
                                     ),
@@ -77,7 +77,7 @@ class AddPadre extends StatelessWidget {
                                     SizedBox(height: 20),
 
                                     CustomTextField(
-                                      errorText: null, 
+                                      errorText: firestore.errorDireccion, 
                                       labeltext: 'Ingrese su dirección',
                                       onChanged: firestore.getDireccion,
                                     ),
@@ -89,7 +89,7 @@ class AddPadre extends StatelessWidget {
                                     SizedBox(height: 20),
 
                                     CustomTextField(
-                                      errorText: null, 
+                                      errorText: firestore.errorDocumentoHijo, 
                                       labeltext: 'Ingrese documento estudiante',
                                       onChanged: firestore.getDocumentoHijo,
                                     ),
@@ -101,7 +101,7 @@ class AddPadre extends StatelessWidget {
                                     SizedBox(height: 20),
 
                                     CustomTextField(
-                                      errorText: null, 
+                                      errorText: firestore.errorPlaca, 
                                       labeltext: 'Ingrese placa ruta asignada',
                                       onChanged: firestore.getPlaca,
                                     ),
@@ -109,12 +109,19 @@ class AddPadre extends StatelessWidget {
                                     SizedBox(height: 20),
                                 
                                     ElevatedButton(
-                                      onPressed: (){
-                                        firestore.addPadre();
-                                      }, 
-                                      child: Text( 'Guardar' )
-                                    )
-                                  ],
+                                    onPressed: () {
+                                      firestore.addPadre();
+                                      },
+                                      child: Text('Guardar'),
+                                      ),
+
+                                      if (firestore.errorGeneral != null)
+                                        Text(
+                                          firestore.errorGeneral!,
+                                          style: TextStyle(color: Colors.red),
+                                          ),
+                                        ],
+                                      )
                                 
                                   
                                 
@@ -124,9 +131,8 @@ class AddPadre extends StatelessWidget {
                           ),
                     ),
                   ),
-                )
-              ),
-            );
+                ),
+              );
           }
         ),
       )

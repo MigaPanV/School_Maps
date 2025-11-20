@@ -4,6 +4,7 @@ import 'package:school_maps/presentation/provider/auth_provider.dart';
 import 'package:school_maps/presentation/provider/rector_provider.dart';
 import 'package:school_maps/presentation/screens/rector/add_padre.dart';
 import 'package:school_maps/presentation/screens/rector/crear_ruta.dart';
+import 'package:school_maps/presentation/widget/shared/custom_profile.dart';
 
 class RectorScreen extends StatelessWidget {
   const RectorScreen({super.key});
@@ -41,18 +42,25 @@ class RectorScreen extends StatelessWidget {
           actions: [
             Padding(
               padding: const EdgeInsets.only( top: 8.0 ),
-              child: IconButton(
-                onPressed: (){}, 
-                icon: Icon( Icons.notifications ),
-                tooltip: 'Notificaciones',
+              child: Material(
+                color: Colors.transparent,
+                shape: const CircleBorder(),
+                child: InkWell(
+                  customBorder: const CircleBorder(),
+                onTap: (){
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => CustomProfileScreen(),
+                      ),
+                  );
+                }, 
+                child: const CircleAvatar(
+                  backgroundImage: AssetImage('assets/images/login.jpg'),
+                  radius: 30,
+                ),
               ),
             ),
-            Padding(
-              padding: const EdgeInsets.only( top: 8.0, left:8.0 ),
-              child: CircleAvatar(
-                backgroundImage: Image.asset( 'assets/images/login.jpg' ).image,
-                radius: 30,
-              ),
             )
           ],
         ),
