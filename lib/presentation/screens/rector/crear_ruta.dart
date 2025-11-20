@@ -61,10 +61,12 @@ class CrearRuta extends StatelessWidget {
                             child: Padding(
                               padding: const EdgeInsets.symmetric(vertical: 8.0),
                               child: TextField(
+                                onChanged: (value) => rectorProvider.setPuntoRuta(value),
                                 decoration: InputDecoration(
                                   hintText: 'Ingresar un punto de ruta',
                                   filled: true,
                                   fillColor: Colors.white,
+                                  errorText: rectorProvider.errorPuntoRuta,
                                   contentPadding: const EdgeInsets.symmetric(
                                     horizontal: 16,
                                     vertical: 14,
@@ -90,7 +92,12 @@ class CrearRuta extends StatelessWidget {
                             alignment: WrapAlignment.center,
                             children: [
                               ElevatedButton(
-                                onPressed: () {},
+                                onPressed: () {
+                                  if (rectorProvider.validarPuntoRuta()) {
+                                    // Aquí agregas el punto a Firestore o a una lista temporal
+                                    print("Punto válido: ${rectorProvider.puntoRuta}");
+                                  }
+                                },
                                 child: const Text('Agregar punto'),
                               ),
                               ElevatedButton(

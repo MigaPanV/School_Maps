@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:school_maps/presentation/provider/auth_provider.dart';
 import 'package:school_maps/presentation/screens/conductor/conductor_est.dart';
 import 'package:school_maps/presentation/screens/conductor/conductor_finRuta.dart';
+import 'package:school_maps/presentation/widget/shared/custom_profile.dart';
 
 class CondScreen extends StatefulWidget {
   const CondScreen({super.key});
@@ -141,11 +142,28 @@ class _CondScreenState extends State<CondScreen> {
             'Conductor',
             style: TextStyle(fontSize: 20, fontWeight: FontWeight.w500),
           ),
-          actions: const [
-            IconButton(onPressed: null, icon: Icon(Icons.notifications)),
-            CircleAvatar(
-              radius: 20,
-              backgroundImage: AssetImage('assets/images/login.jpg'),
+          actions: [
+            Padding(
+              padding: const EdgeInsets.only(top: 8.0, right: 8.0),
+              child: Material(
+                color: Colors.transparent,
+                shape: const CircleBorder(),
+                child: InkWell(
+                  customBorder: const CircleBorder(),
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const CustomProfileScreen(),
+                      ),
+                    );
+                  },
+                  child: const CircleAvatar(
+                    backgroundImage: AssetImage('assets/images/login.jpg'),
+                    radius: 30,
+                  ),
+                ),
+              ),
             ),
           ],
         ),

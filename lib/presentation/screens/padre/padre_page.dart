@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:school_maps/presentation/widget/shared/custom_profile.dart';
 import 'package:provider/provider.dart';
 import 'package:school_maps/presentation/provider/auth_provider.dart';
 
@@ -124,14 +125,28 @@ class _PadreScreenState extends State<PadreScreen> {
             'Acudiente',
             style: TextStyle(fontSize: 20, fontWeight: FontWeight.w500),
           ),
-          actions: const [
-            IconButton(
-              onPressed: null,
-              icon: Icon(Icons.notifications),
-            ),
-            CircleAvatar(
-              radius: 20,
-              backgroundImage: AssetImage('assets/images/login.jpg'),
+          actions: [
+            Padding(
+              padding: const EdgeInsets.only(top: 8.0, right: 8.0),
+              child: Material(
+                color: Colors.transparent,
+                shape: const CircleBorder(),
+                child: InkWell(
+                  customBorder: const CircleBorder(),
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const CustomProfileScreen(),
+                      ),
+                    );
+                  },
+                  child: const CircleAvatar(
+                    backgroundImage: AssetImage('assets/images/login.jpg'),
+                    radius: 30,
+                  ),
+                ),
+              ),
             ),
           ],
         ),
