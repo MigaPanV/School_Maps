@@ -7,6 +7,8 @@ class AuthProvider with ChangeNotifier {
   bool isLogin = true;
   bool isLoading = false;
 
+  User? user;
+
   String email = '';
   String password = '';
 
@@ -82,6 +84,9 @@ class AuthProvider with ChangeNotifier {
         email: email,
         password: password,
       );
+
+      await _auth.currentUser!.getIdToken(true);
+      
     } on FirebaseAuthException catch (e) {
       switch (e.code) {
         case 'user-not-found':

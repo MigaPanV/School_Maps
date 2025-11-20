@@ -101,45 +101,36 @@ class AuthScreen extends StatelessWidget {
             child: CircularProgressIndicator()
           );
         }
-
-        if( snapshot.hasData ){
-
-          return RectorScreen();
-
-        }
-        else{
+        
+        if( !snapshot.hasData ){
 
           return const AuthPage();
 
         }
+        
+        final uId = snapshot.data!.uid;
+
+        return FutureBuilder<String?>(
+          future: context.read<FirestoreProvider>().getUserRole(uId), 
+          builder: (context, roleSnapshot){
+
+            if(!roleSnapshot.hasData){
+
+              return Center(child: CircularProgressIndicator());
+
+            }
+
+            final rol = roleSnapshot.data;
+
+            if( rol == 'Padre') return PadreScreen();
+            if( rol == 'Conductor' ) return CondScreen();
+            if( rol == 'Rector' ) return RectorScreen();
+
+            return AuthPage();
+          }
+        );
+
       }
     );
   }
 }
-
-class HomePage extends StatelessWidget {
-    const HomePage({super.key});
-  
-    @override
-    Widget build(BuildContext context) {
-
-      final auth.AuthProvider authProvider = context.watch<auth.AuthProvider>();
-      return Scaffold(
-        
-        body: Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Text( 'Bienvenido' ),
-              ElevatedButton(
-                onPressed: (){
-                  authProvider.signOut();
-                },
-                child: Text( 'Cerrar sesion' )
-              )
-            ],
-          )
-        )
-      );
-    }
-  }

@@ -30,6 +30,9 @@ class _AuthPageState extends State<AuthPage> {
         await authProvider.signOut();
         authProvider.toggleIsLogin();
       }
+      
+      if (!mounted) return;
+      
     }
 
     // Mantener el correo escrito después de error

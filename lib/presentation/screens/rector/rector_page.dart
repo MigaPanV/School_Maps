@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:school_maps/presentation/provider/auth_provider.dart';
 import 'package:school_maps/presentation/provider/rector_provider.dart';
+import 'package:school_maps/presentation/screens/rector/add_conductor.dart';
 import 'package:school_maps/presentation/screens/rector/add_padre.dart';
 import 'package:school_maps/presentation/screens/rector/crear_ruta.dart';
 
@@ -99,10 +100,10 @@ class RectorScreen extends StatelessWidget {
                                   
                                   MenuItemButton(
                                     onPressed: (){
-                                      // Navigator.push( context, MaterialPageRoute<void>(
-                                      //   builder: (BuildContext context) => AddConductor()
-                                      //   )
-                                      // );
+                                      Navigator.push( context, MaterialPageRoute<void>(
+                                        builder: (BuildContext context) => AddConductor()
+                                        )
+                                      );
                                     },
                                     child: Text( 'Añadir condutor', style: styleText ),
                                   ),
