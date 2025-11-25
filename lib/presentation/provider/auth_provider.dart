@@ -2,12 +2,17 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
 class AuthProvider with ChangeNotifier {
+
+  AuthProvider() {
+    userAuthStatus();
+  }
+  
   final FirebaseAuth _auth = FirebaseAuth.instance;
 
   bool isLogin = true;
   bool isLoading = false;
 
-  User? user;
+  User? user = FirebaseAuth.instance.currentUser;
 
   String email = '';
   String password = '';
@@ -139,5 +144,13 @@ class AuthProvider with ChangeNotifier {
 
   Future<void> signOut() async {
     await _auth.signOut();
+  }
+
+  void userAuthStatus(){
+    FirebaseAuth.instance.authStateChanges().listen((User? usuario) {
+      user = usuario;    
+      notifyListeners();
+    });
+
   }
 }

@@ -41,7 +41,7 @@ class DatabaseConductorModel{
 
   Conductor toConductorEntity() => Conductor(
     
-    nombreConductor: nombreConductor,
+    nombre: nombreConductor,
     documento: documento,
     correo: correo,
     rol: rol,

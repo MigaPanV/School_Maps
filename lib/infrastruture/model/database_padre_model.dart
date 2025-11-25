@@ -29,7 +29,7 @@ class DatabasePadreModel{
     correo: firestore[ 'correo' ],
     rol: firestore[ 'rol' ],
     direccion: firestore[ 'direccion' ], 
-    documentoHijo: firestore[ 'documentoHijo' ], 
+    documentoHijo: firestore[ 'documentoHijo' ].cast<int>(), 
     placaRutaAsignada: firestore[ 'placa' ]
   );
 
@@ -47,7 +47,7 @@ class DatabasePadreModel{
 
   Padre toPadreEntity() => Padre(
 
-    nombrePadre: nombrePadre, 
+    nombre: nombrePadre, 
     documento: documento, 
     correo: correo,
     rol: rol,

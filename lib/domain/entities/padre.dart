@@ -1,7 +1,7 @@
 
 class Padre{
 
-  final String nombrePadre;
+  final String nombre;
   final int documento;
   final String correo;
   final String rol;
@@ -11,10 +11,10 @@ class Padre{
   
   Padre({
 
-    required this.nombrePadre,
+    required this.nombre,
     required this.documento,
     required this.correo,
-    this.rol = 'acudiente',
+    this.rol = 'Acudiente',
     required this.direccion,
     required this.documentoHijo,
     required this.placaRutaAsignada

@@ -1,45 +1,46 @@
-const { onCall } = require("firebase-functions/v2/https");
+const { onCall, HttpsError } = require("firebase-functions/v2/https");
 const { setGlobalOptions } = require("firebase-functions/v2/options");
 const admin = require("firebase-admin");
 
 admin.initializeApp();
-
-// Opcional: limitar instancias
 setGlobalOptions({ maxInstances: 10 });
 
-/**
- * Crear usuario con rol sin cerrar la sesión actual.
- * Solo un usuario con rol "admin" puede ejecutar esta función.
- */
-exports.createUserWithRole = onCall(async (request) => {
+exports.createFather = onCall(async (request) => {
   const context = request.auth;
 
   // Verificar autenticación
   if (!context) {
-    throw new Error("Debes estar autenticado para crear usuarios.");
+    throw new HttpsError(
+      "unauthenticated",
+      "Debes estar autenticado para crear usuarios."
+    );
   }
 
-  // Verificar rol de administrador
-  if (!context.token || context.token.role !== "Rector") {
-    throw new Error("No tienes permisos para crear usuarios.");
+  // Verificar rol
+  if (!context.token || context.token.rol !== "Rector") {
+    throw new HttpsError(
+      "permission-denied",
+      "No tienes permisos para crear usuarios."
+    );
   }
 
   const { correo, password, rol } = request.data;
 
   try {
-    // Crear usuario con Firebase Admin
     const userRecord = await admin.auth().createUser({
       email: correo,
-      password: password
+      password: password,
     });
 
-    // Asignar custom claim
     await admin.auth().setCustomUserClaims(userRecord.uid, { rol });
 
-    await admin.firestore().collection("Acudientes").doc(userRecord.uid).set({
-      correo,
-      rol,
-    });
+    await admin.firestore()
+      .collection("Acudientes")
+      .doc(userRecord.uid)
+      .set({
+        correo,
+        rol,
+      });
 
     return {
       message: "Usuario creado correctamente",
@@ -47,22 +48,78 @@ exports.createUserWithRole = onCall(async (request) => {
     };
 
   } catch (error) {
-    return {
-      error: error.message,
-    };
+    throw new HttpsError("internal", error.message);
   }
-})
+});
+
+// ===============================================================
+// CREAR CONDUCTOR
+// ===============================================================
+
+exports.createDriver = onCall(async (request) => {
+  const context = request.auth;
+
+  if (!context) {
+    throw new HttpsError(
+      "unauthenticated",
+      "Debes estar autenticado para crear usuarios."
+    );
+  }
+
+  if (!context.token || context.token.rol !== "Rector") {
+    throw new HttpsError(
+      "permission-denied",
+      "No tienes permisos para crear usuarios."
+    );
+  }
+
+  const { correo, password, rol } = request.data;
+
+  try {
+    const userRecord = await admin.auth().createUser({
+      email: correo,
+      password: password,
+    });
+
+    await admin.auth().setCustomUserClaims(userRecord.uid, { rol });
+
+    await admin.firestore()
+      .collection("Conductores")
+      .doc(userRecord.uid)
+      .set({
+        correo,
+        rol,
+      });
+
+    return {
+      message: "Usuario creado exitosamente.",
+      uid: userRecord.uid,
+    };
+
+  } catch (error) {
+    throw new HttpsError("internal", error.message);
+  }
+});
+
+// ===============================================================
+// ASIGNAR ROL ADMIN
+// ===============================================================
 
 exports.setAdminRole = onCall(async (request) => {
   const { uid } = request.data;
 
   if (!uid) {
-    throw new Error("Debes enviar un UID.");
+    throw new HttpsError("invalid-argument", "Debes enviar un UID.");
   }
 
-  await admin.auth().setCustomUserClaims(uid, { rol: "Rector" });
+  try {
+    await admin.auth().setCustomUserClaims(uid, { rol: "Rector" });
 
-  return {
-    message: `Rol Rector asignado correctamente al usuario ${uid}`
-  };
+    return {
+      message: `Rol Rector asignado correctamente al usuario ${uid}`,
+    };
+
+  } catch (error) {
+    throw new HttpsError("internal", error.message);
+  }
 });

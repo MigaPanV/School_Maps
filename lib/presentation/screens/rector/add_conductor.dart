@@ -47,7 +47,7 @@ class AddConductor extends StatelessWidget {
       child: Scaffold(
         appBar: AppBar(
 
-          title: Text( 'Añadir Acudiente' ),
+          title: Text( 'Añadir Conductor' ),
 
         ),
         body: firestore.isLoading == true 
@@ -86,7 +86,7 @@ class AddConductor extends StatelessWidget {
                                 CustomTextField(
                                   errorText: null, 
                                   labeltext: 'Ingrese nombre conductor',
-                                  onChanged: firestore.getNombreAcudiente,
+                                  onChanged: firestore.getNombreConductor,
                                 ),
 
                                 SizedBox(height: 20), 
@@ -94,7 +94,7 @@ class AddConductor extends StatelessWidget {
                                 CustomTextField(
                                   errorText: null, 
                                   labeltext: 'Ingrese documento conductor',
-                                  onChanged: firestore.getDocumentoAcudiente,
+                                  onChanged: firestore.getDocumentoConductor,
                                 ),
 
                                 SizedBox(height: 20),
@@ -102,7 +102,7 @@ class AddConductor extends StatelessWidget {
                                 CustomTextField(
                                   errorText: null, 
                                   labeltext: 'Ingrese correo conductor',
-                                  onChanged: firestore.getCorreoAcudiente,
+                                  onChanged: firestore.getCorreoConductor,
                                 ),
 
                                 SizedBox(height: 20),
@@ -110,7 +110,7 @@ class AddConductor extends StatelessWidget {
                                 CustomTextField(
                                   errorText: null, 
                                   labeltext: 'Ingrese la fecha de vencimiento de la licencia',
-                                  onChanged: firestore.getDireccion,
+                                  onChanged: firestore.getFechaVencimientoLicencia,
                                 ),
 
                                 SizedBox(height: 20),
@@ -122,7 +122,7 @@ class AddConductor extends StatelessWidget {
                                 CustomTextField(
                                   errorText: null, 
                                   labeltext: 'Ingrese placa ruta asignada',
-                                  onChanged: firestore.getDocumentoHijo,
+                                  onChanged: firestore.getPlaca,
                                 ),
 
                                 SizedBox(height: 20),
