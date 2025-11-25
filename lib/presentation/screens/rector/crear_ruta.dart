@@ -22,7 +22,6 @@ class CrearRuta extends StatelessWidget {
         body: LayoutBuilder(
           builder: (context, constraints) {
             return SingleChildScrollView(
-              // esto permite desplazarte por toda la pantalla
               child: ConstrainedBox(
                 constraints: BoxConstraints(
                   minHeight: constraints.maxHeight,

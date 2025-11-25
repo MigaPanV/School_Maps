@@ -94,7 +94,7 @@ class FirestoreProvider extends ChangeNotifier {
 }
 
 void getDocumentoConductor(String value) {
-  documentoConductor = value.trim();
+  documentoConductor = int.parse( value.trim() );
   errorDocumentoConductor = null;
   notifyListeners();
 }
@@ -165,7 +165,7 @@ void getFechaVencimientoLicencia(String value) {
 
   void resetPadreFormulario() {
   nombrePadre = '';
-  documentoPadre = '';
+  documentoPadre = 0;
   correo = '';
   direccion = '';
   placaRutaAsignada = '';
@@ -189,7 +189,7 @@ void getFechaVencimientoLicencia(String value) {
 
 void resetConductorFormulario() {
   nombreConductor = "";
-  documentoConductor = "";
+  documentoConductor = 0;
   correoConductor = "";
   fechavencimientoLicencia = "";
   placaRutaAsignada = "";
@@ -212,7 +212,7 @@ bool validateConductorForm() {
     valid = false;
   }
 
-  if (documentoConductor.isEmpty) {
+  if (documentoConductor == 0) {
     errorDocumentoConductor = "Campo requerido";
     valid = false;
   }
@@ -244,7 +244,7 @@ bool validateConductorForm() {
       documentoHijoTemp = "";
       notifyListeners();
     } else {
-      errorNombre = "Documento inválido";
+      errorDocumento = "Documento inválido";
       notifyListeners();
     }
   } 
