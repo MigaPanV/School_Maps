@@ -3,6 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:school_maps/domain/entities/padre.dart';
 import 'package:school_maps/infrastruture/model/database_conductor_model.dart';
+import 'package:school_maps/infrastruture/model/database_estudiante_model.dart';
 import 'package:school_maps/infrastruture/model/database_padre_model.dart';
 import 'package:school_maps/presentation/provider/auth_provider.dart';
 import 'package:cloud_functions/cloud_functions.dart';
@@ -17,17 +18,22 @@ class FirestoreProvider extends ChangeNotifier {
   //* Variables padre
 
   String nombrePadre = '';
-  String documentoPadre = '';
+  int documentoPadre = 0;
   String correo = '';
   String direccion = '';
   List<int> documentoHijo = [];
 
-  //* Campos conductor
+  //* Variables conductor
 
   String nombreConductor = '';
-  String documentoConductor = '';
+  int documentoConductor = 0;
   String correoConductor = '';
   String fechavencimientoLicencia = '';
+  
+  // *Variables Estudiante
+
+  String nombreEstudiante = '';
+  int documentoEstudiante = 0;
   
   String placaRutaAsignada = '';
   
@@ -39,6 +45,7 @@ class FirestoreProvider extends ChangeNotifier {
   String? errorPlaca;
   String? errorGeneral;
 
+
   // * Funciones Getter padre
 
   void getNombreAcudiente( String value ) {
@@ -48,7 +55,7 @@ class FirestoreProvider extends ChangeNotifier {
   }
 
   void getDocumentoAcudiente( String value ) {
-    documentoPadre = value.trim();
+    documentoPadre = int.parse( value.trim() );
     errorDocumento = null;
     notifyListeners();
   }
@@ -82,7 +89,7 @@ class FirestoreProvider extends ChangeNotifier {
   }
 
   void getDocumentoConductor( String value ){
-    documentoConductor = value.trim();
+    documentoConductor = int.parse( value.trim() );
     notifyListeners();
   }
 
@@ -93,6 +100,18 @@ class FirestoreProvider extends ChangeNotifier {
 
   void getFechaVencimientoLicencia( String value ){
     fechavencimientoLicencia = value.trim();
+    notifyListeners();
+  }
+
+  // * Funciones Getter Estudiante
+
+  void getNombreEstudiante( String value ){
+    nombreEstudiante = value.trim();
+    notifyListeners();
+  }
+
+  void getDocumentoEstudiante( String value ){
+    documentoEstudiante = int.parse( value.trim() );
     notifyListeners();
   }
 
@@ -111,7 +130,7 @@ class FirestoreProvider extends ChangeNotifier {
       errorNombre = "Campo requerido";
       valid = false;
     }
-    if (documentoPadre.isEmpty) {
+    if (documentoPadre == 0) {
       errorDocumento = "Campo requerido";
       valid = false;
     }
@@ -159,7 +178,7 @@ class FirestoreProvider extends ChangeNotifier {
 
       final padre = DatabasePadreModel(
         nombrePadre: nombrePadre,
-        documento: int.parse(documentoPadre),
+        documento: documentoPadre,
         correo: correo,
         direccion: direccion,
         documentoHijo: documentoHijo,
@@ -184,18 +203,53 @@ class FirestoreProvider extends ChangeNotifier {
 
 
       isUploaded = true;
-      isLoading = false;
       notifyListeners();
 
     } on FirebaseException catch (e) {
+
       errorGeneral = e.message ?? "Error al guardar en la base de datos";
+
     } finally {
+
       isLoading = false;
       notifyListeners();
+
     }
   }
 
   Future<void> addEstudiante() async {
+
+    try{
+
+      isLoading = true;
+      isUploaded = false;
+      notifyListeners();
+
+      final estudiante = DatabaseEstudianteModel(
+        nombreEstudiante: nombreEstudiante, 
+        documento: documentoEstudiante, 
+        cedulaAcudiente: documentoPadre, 
+        placaRutaAsignada: placaRutaAsignada, 
+        direccion: direccion
+      );
+
+      await firestore.collection( 'Estudiantes' ).doc( estudiante.documento.toString() ).set({
+        ...estudiante.toFirestore()
+      });
+
+      isUploaded = true;
+      notifyListeners();
+
+    }on FirebaseException catch (e) {
+
+      errorGeneral = e.message ?? "Error al guardar en la base de datos";
+
+    } finally {
+
+      isLoading = false;
+      notifyListeners();
+
+    }
 
   }
 
@@ -208,7 +262,7 @@ class FirestoreProvider extends ChangeNotifier {
 
       final conductor = DatabaseConductorModel(
         nombreConductor: nombreConductor, 
-        documento: int.parse( documentoConductor ), 
+        documento: documentoConductor, 
         correo: correoConductor, 
         vencimientoLicencia: fechavencimientoLicencia, 
         placaRutaAsignada: placaRutaAsignada
@@ -230,13 +284,17 @@ class FirestoreProvider extends ChangeNotifier {
       });
 
       isUploaded = true;
-      isLoading = false;
       notifyListeners();
 
     }on FirebaseException catch(e){
 
       errorGeneral = e.message ?? 'Error al guardar en la base de dedatos.';
 
+    }finally {
+
+      isLoading = false;
+      notifyListeners();
+      
     }
   }
 
