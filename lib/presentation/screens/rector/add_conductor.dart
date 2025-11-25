@@ -84,7 +84,7 @@ class AddConductor extends StatelessWidget {
                                 SizedBox( height: 20 ),
 
                                 CustomTextField(
-                                  errorText: null, 
+                                  errorText: firestore.errorNombreConductor, 
                                   labeltext: 'Ingrese nombre conductor',
                                   onChanged: firestore.getNombreConductor,
                                 ),
@@ -92,7 +92,7 @@ class AddConductor extends StatelessWidget {
                                 SizedBox(height: 20), 
 
                                 CustomTextField(
-                                  errorText: null, 
+                                  errorText: firestore.errorDocumentoConductor, 
                                   labeltext: 'Ingrese documento conductor',
                                   onChanged: firestore.getDocumentoConductor,
                                 ),
@@ -100,7 +100,7 @@ class AddConductor extends StatelessWidget {
                                 SizedBox(height: 20),
 
                                 CustomTextField(
-                                  errorText: null, 
+                                  errorText: firestore.errorCorreoConductor, 
                                   labeltext: 'Ingrese correo conductor',
                                   onChanged: firestore.getCorreoConductor,
                                 ),
@@ -108,7 +108,7 @@ class AddConductor extends StatelessWidget {
                                 SizedBox(height: 20),
 
                                 CustomTextField(
-                                  errorText: null, 
+                                  errorText: firestore.errorFechaLicencia, 
                                   labeltext: 'Ingrese la fecha de vencimiento de la licencia',
                                   onChanged: firestore.getFechaVencimientoLicencia,
                                 ),
@@ -120,7 +120,7 @@ class AddConductor extends StatelessWidget {
                                 SizedBox(height: 20),
 
                                 CustomTextField(
-                                  errorText: null, 
+                                  errorText: firestore.errorPlacaConductor, 
                                   labeltext: 'Ingrese placa ruta asignada',
                                   onChanged: firestore.getPlaca,
                                 ),

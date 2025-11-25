@@ -7,6 +7,7 @@ import 'package:school_maps/presentation/screens/rector/add_estudiante.dart';
 import 'package:school_maps/presentation/screens/rector/add_padre.dart';
 import 'package:school_maps/presentation/screens/rector/crear_ruta.dart';
 import 'package:school_maps/presentation/widget/shared/custom_profile.dart';
+import 'package:school_maps/presentation/provider/firestore_provider.dart';
 
 class RectorScreen extends StatelessWidget {
   const RectorScreen({super.key});
@@ -109,6 +110,8 @@ class RectorScreen extends StatelessWidget {
                                   
                                   MenuItemButton(
                                     onPressed: (){
+                                      final firestore = context.read<FirestoreProvider>();
+                                      firestore.resetConductorFormulario();
                                       Navigator.push( context, MaterialPageRoute<void>(
                                         builder: (BuildContext context) => AddConductor()
                                         )
@@ -118,6 +121,8 @@ class RectorScreen extends StatelessWidget {
                                   ),
                                   MenuItemButton(
                                     onPressed: (){
+                                      final firestore = context.read<FirestoreProvider>();
+                                      firestore.resetPadreFormulario();
                                       Navigator.push( context, MaterialPageRoute<void>(
                                         builder: (BuildContext context) => AddPadre()
                                         )

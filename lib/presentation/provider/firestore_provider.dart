@@ -44,6 +44,11 @@ class FirestoreProvider extends ChangeNotifier {
   String? errorDocumentoHijo;
   String? errorPlaca;
   String? errorGeneral;
+  String? errorNombreConductor;
+  String? errorDocumentoConductor;
+  String? errorCorreoConductor;
+  String? errorFechaLicencia;
+  String? errorPlacaConductor;
 
 
   // * Funciones Getter padre
@@ -82,26 +87,29 @@ class FirestoreProvider extends ChangeNotifier {
   
   // * Funciones Getter Conductor
 
-  void getNombreConductor( String value )
-  {
-    nombreConductor = value.trim();
-    notifyListeners();
-  }
+  void getNombreConductor(String value) {
+  nombreConductor = value.trim();
+  errorNombreConductor = null;
+  notifyListeners();
+}
 
-  void getDocumentoConductor( String value ){
-    documentoConductor = int.parse( value.trim() );
-    notifyListeners();
-  }
+void getDocumentoConductor(String value) {
+  documentoConductor = value.trim();
+  errorDocumentoConductor = null;
+  notifyListeners();
+}
 
-  void getCorreoConductor( String value ){
-    correoConductor = value.trim();
-    notifyListeners();
-  }
+void getCorreoConductor(String value) {
+  correoConductor = value.trim();
+  errorCorreoConductor = null;
+  notifyListeners();
+}
 
-  void getFechaVencimientoLicencia( String value ){
-    fechavencimientoLicencia = value.trim();
-    notifyListeners();
-  }
+void getFechaVencimientoLicencia(String value) {
+  fechavencimientoLicencia = value.trim();
+  errorFechaLicencia = null;
+  notifyListeners();
+}
 
   // * Funciones Getter Estudiante
 
@@ -117,11 +125,11 @@ class FirestoreProvider extends ChangeNotifier {
 
   // * Funciones Getter Bus
 
-  void getPlaca( String value ) {
-    placaRutaAsignada = value.trim();
-    errorPlaca = null;
-    notifyListeners();
-  }
+  void getPlaca(String value) {
+  placaRutaAsignada = value.trim();
+  errorPlacaConductor = null;
+  notifyListeners();
+}
 
   bool validateForm() {
     bool valid = true;
@@ -154,6 +162,79 @@ class FirestoreProvider extends ChangeNotifier {
     notifyListeners();
     return valid;
   }
+
+  void resetPadreFormulario() {
+  nombrePadre = '';
+  documentoPadre = '';
+  correo = '';
+  direccion = '';
+  placaRutaAsignada = '';
+  
+  documentoHijo = [];
+  documentoHijoTemp = "";
+
+  errorNombre = null;
+  errorDocumento = null;
+  errorCorreo = null;
+  errorDireccion = null;
+  errorDocumentoHijo = null;
+  errorPlaca = null;
+  errorGeneral = null;
+
+  isUploaded = false;
+  isLoading = false;
+
+  notifyListeners();
+}
+
+void resetConductorFormulario() {
+  nombreConductor = "";
+  documentoConductor = "";
+  correoConductor = "";
+  fechavencimientoLicencia = "";
+  placaRutaAsignada = "";
+
+  errorNombreConductor = null;
+  errorDocumentoConductor = null;
+  errorCorreoConductor = null;
+  errorFechaLicencia = null;
+  errorPlacaConductor = null;
+
+  isUploaded = false;
+  notifyListeners();
+}
+
+bool validateConductorForm() {
+  bool valid = true;
+
+  if (nombreConductor.isEmpty) {
+    errorNombreConductor = "Campo requerido";
+    valid = false;
+  }
+
+  if (documentoConductor.isEmpty) {
+    errorDocumentoConductor = "Campo requerido";
+    valid = false;
+  }
+
+  if (correoConductor.isEmpty || !correoConductor.contains("@")) {
+    errorCorreoConductor = "Correo inválido";
+    valid = false;
+  }
+
+  if (fechavencimientoLicencia.isEmpty) {
+    errorFechaLicencia = "Campo requerido";
+    valid = false;
+  }
+
+  if (placaRutaAsignada.isEmpty) {
+    errorPlacaConductor = "Campo requerido";
+    valid = false;
+  }
+
+  notifyListeners();
+  return valid;
+}
 
   void addDocumentoHijo() {
     final entero = int.tryParse(documentoHijoTemp);
@@ -254,10 +335,12 @@ class FirestoreProvider extends ChangeNotifier {
   }
 
   Future<void> addConductor() async {
+  if (!validateConductorForm()) return;
 
     try{
       isUploaded = false;
       isLoading = true;
+      errorGeneral = null;
       notifyListeners();
 
       final conductor = DatabaseConductorModel(
@@ -268,16 +351,15 @@ class FirestoreProvider extends ChangeNotifier {
         placaRutaAsignada: placaRutaAsignada
       );
 
-      await FirebaseAuth.instance.currentUser?.getIdToken( true );
+    await FirebaseAuth.instance.currentUser?.getIdToken(true);
 
-      final callable = FirebaseFunctions.instance.httpsCallable('createDriver');
+    final callable = FirebaseFunctions.instance.httpsCallable('createDriver');
 
-      final result = await callable.call({
-        'correo' : correoConductor.trim(),
-        'password' : documentoConductor.toString(),
-        'rol' : 'Conductor'
-      });
-
+    final result = await callable.call({
+      'correo': correoConductor.trim(),
+      'password': documentoConductor.toString(),
+      'rol': 'Conductor',
+    });
       await firestore.collection( 'Conductores' ).doc( result.data[ 'uid' ] ).set({
         ...conductor.toFirestore(),
         'rol' : 'Conductor'
@@ -286,10 +368,8 @@ class FirestoreProvider extends ChangeNotifier {
       isUploaded = true;
       notifyListeners();
 
-    }on FirebaseException catch(e){
-
-      errorGeneral = e.message ?? 'Error al guardar en la base de dedatos.';
-
+  } on FirebaseException catch (e) {
+    errorGeneral = e.message ?? 'Error al guardar en la base de datos.';
     }finally {
 
       isLoading = false;
@@ -297,6 +377,7 @@ class FirestoreProvider extends ChangeNotifier {
       
     }
   }
+
 
   Future<void> addBus() async {
 
