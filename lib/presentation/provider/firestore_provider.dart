@@ -3,6 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:school_maps/domain/entities/padre.dart';
 import 'package:school_maps/infrastruture/model/database_conductor_model.dart';
+import 'package:school_maps/infrastruture/model/database_estudiante_model.dart';
 import 'package:school_maps/infrastruture/model/database_padre_model.dart';
 import 'package:school_maps/presentation/provider/auth_provider.dart';
 import 'package:cloud_functions/cloud_functions.dart';
@@ -17,17 +18,22 @@ class FirestoreProvider extends ChangeNotifier {
   //* Variables padre
 
   String nombrePadre = '';
-  String documentoPadre = '';
+  int documentoPadre = 0;
   String correo = '';
   String direccion = '';
   List<int> documentoHijo = [];
 
-  //* Campos conductor
+  //* Variables conductor
 
   String nombreConductor = '';
-  String documentoConductor = '';
+  int documentoConductor = 0;
   String correoConductor = '';
   String fechavencimientoLicencia = '';
+  
+  // *Variables Estudiante
+
+  String nombreEstudiante = '';
+  int documentoEstudiante = 0;
   
   String placaRutaAsignada = '';
   
@@ -44,6 +50,7 @@ class FirestoreProvider extends ChangeNotifier {
   String? errorFechaLicencia;
   String? errorPlacaConductor;
 
+
   // * Funciones Getter padre
 
   void getNombreAcudiente( String value ) {
@@ -53,7 +60,7 @@ class FirestoreProvider extends ChangeNotifier {
   }
 
   void getDocumentoAcudiente( String value ) {
-    documentoPadre = value.trim();
+    documentoPadre = int.parse( value.trim() );
     errorDocumento = null;
     notifyListeners();
   }
@@ -104,6 +111,18 @@ void getFechaVencimientoLicencia(String value) {
   notifyListeners();
 }
 
+  // * Funciones Getter Estudiante
+
+  void getNombreEstudiante( String value ){
+    nombreEstudiante = value.trim();
+    notifyListeners();
+  }
+
+  void getDocumentoEstudiante( String value ){
+    documentoEstudiante = int.parse( value.trim() );
+    notifyListeners();
+  }
+
   // * Funciones Getter Bus
 
   void getPlaca(String value) {
@@ -119,7 +138,7 @@ void getFechaVencimientoLicencia(String value) {
       errorNombre = "Campo requerido";
       valid = false;
     }
-    if (documentoPadre.isEmpty) {
+    if (documentoPadre == 0) {
       errorDocumento = "Campo requerido";
       valid = false;
     }
@@ -240,7 +259,7 @@ bool validateConductorForm() {
 
       final padre = DatabasePadreModel(
         nombrePadre: nombrePadre,
-        documento: int.parse(documentoPadre),
+        documento: documentoPadre,
         correo: correo,
         direccion: direccion,
         documentoHijo: documentoHijo,
@@ -265,37 +284,72 @@ bool validateConductorForm() {
 
 
       isUploaded = true;
-      isLoading = false;
       notifyListeners();
 
     } on FirebaseException catch (e) {
+
       errorGeneral = e.message ?? "Error al guardar en la base de datos";
+
     } finally {
+
       isLoading = false;
       notifyListeners();
+
     }
   }
 
   Future<void> addEstudiante() async {
+
+    try{
+
+      isLoading = true;
+      isUploaded = false;
+      notifyListeners();
+
+      final estudiante = DatabaseEstudianteModel(
+        nombreEstudiante: nombreEstudiante, 
+        documento: documentoEstudiante, 
+        cedulaAcudiente: documentoPadre, 
+        placaRutaAsignada: placaRutaAsignada, 
+        direccion: direccion
+      );
+
+      await firestore.collection( 'Estudiantes' ).doc( estudiante.documento.toString() ).set({
+        ...estudiante.toFirestore()
+      });
+
+      isUploaded = true;
+      notifyListeners();
+
+    }on FirebaseException catch (e) {
+
+      errorGeneral = e.message ?? "Error al guardar en la base de datos";
+
+    } finally {
+
+      isLoading = false;
+      notifyListeners();
+
+    }
 
   }
 
   Future<void> addConductor() async {
   if (!validateConductorForm()) return;
 
-  try {
-    isLoading = true;
-    isUploaded = false;
-    errorGeneral = null;
-    notifyListeners();
+    try{
+      isUploaded = false;
+      isLoading = true;
+      errorGeneral = null;
+      notifyListeners();
 
-    final conductor = DatabaseConductorModel(
-      nombreConductor: nombreConductor,
-      documento: int.parse(documentoConductor),
-      correo: correoConductor,
-      vencimientoLicencia: fechavencimientoLicencia,
-      placaRutaAsignada: placaRutaAsignada,
-    );
+      final conductor = DatabaseConductorModel(
+        nombreConductor: nombreConductor, 
+        documento: documentoConductor, 
+        correo: correoConductor, 
+        vencimientoLicencia: fechavencimientoLicencia, 
+        placaRutaAsignada: placaRutaAsignada
+      );
 
     await FirebaseAuth.instance.currentUser?.getIdToken(true);
 
@@ -306,25 +360,24 @@ bool validateConductorForm() {
       'password': documentoConductor.toString(),
       'rol': 'Conductor',
     });
+      await firestore.collection( 'Conductores' ).doc( result.data[ 'uid' ] ).set({
+        ...conductor.toFirestore(),
+        'rol' : 'Conductor'
+      });
 
-    await firestore
-        .collection('Conductores')
-        .doc(result.data['uid'])
-        .set({
-      ...conductor.toFirestore(),
-      'rol': 'Conductor'
-    });
-
-    isUploaded = true;
-    isLoading = false;
-    notifyListeners();
+      isUploaded = true;
+      notifyListeners();
 
   } on FirebaseException catch (e) {
     errorGeneral = e.message ?? 'Error al guardar en la base de datos.';
-    isLoading = false;
-    notifyListeners();
+    }finally {
+
+      isLoading = false;
+      notifyListeners();
+      
+    }
   }
-}
+
 
   Future<void> addBus() async {
 
