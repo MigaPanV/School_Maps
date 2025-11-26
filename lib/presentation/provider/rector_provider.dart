@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_typeahead/flutter_typeahead.dart';
 import 'package:provider/provider.dart';
+import 'package:school_maps/domain/entities/estudiante.dart';
+import 'package:school_maps/domain/entities/padre.dart';
 import 'package:school_maps/presentation/provider/firestore_provider.dart';
 
 class RectorProvider with ChangeNotifier {
@@ -109,7 +111,7 @@ class RectorProvider with ChangeNotifier {
     );
   }
 
-  void openDialogCreateRoute(BuildContext context) {
+  void openDialogCreateRoute(BuildContext context) async {
     final styleTitle = const TextStyle(
       fontSize: 18,
       fontWeight: FontWeight.bold,
@@ -129,12 +131,18 @@ class RectorProvider with ChangeNotifier {
       'Lucía Ramírez': ['Julio Ramírez', 'Martina Ramírez'],
     };
 
-    String? padreSeleccionado;
+    final firestore = Provider.of<FirestoreProvider>(context, listen: false);
+
+    final listaConductores = await firestore.getConductores();
+    await firestore.getPadres();
+
+    Padre? padreSeleccionado;
     String? hijoSeleccionado;
     String? rutaSeleccionada;
     String? errorPadre;
     String? errorRuta;
 
+    TextEditingController textController = TextEditingController();
     showDialog(
       barrierDismissible: false,
       context: context,
@@ -142,7 +150,6 @@ class RectorProvider with ChangeNotifier {
         builder: (context, firestore, _) {
           return StatefulBuilder(
             builder: (context, setState) {
-              TextEditingController textController = TextEditingController();
               return AlertDialog(
                 content: SingleChildScrollView(
                   child: Column(
@@ -154,10 +161,12 @@ class RectorProvider with ChangeNotifier {
                         decoration:
                             const InputDecoration(labelText: 'Selecciona un conductor'),
                         value: conductorSeleccionado,
-                        items: ['Pepito Perez', 'Son Goku', 'Vicente Fernandez']
-                            .map((p) =>
-                                DropdownMenuItem(value: p, child: Text(p)))
-                            .toList(),
+                        items: listaConductores
+                          .map((c) => DropdownMenuItem(
+                                value: c.nombre,
+                                child: Text(c.nombre),
+                              ))
+                          .toList(),
                         onChanged: (value) {
                           seleccionarConductor(value);
                           setState(() {});
@@ -196,43 +205,44 @@ class RectorProvider with ChangeNotifier {
 
                       Text('Asignar padre', style: styleTitle),
                       const SizedBox(height: 12),
-                      TypeAheadField<String>(
-                      suggestionsCallback: (pattern) {
-                        if (pattern.isEmpty) return [];
-                        return familia.keys
-                            .where((nombre) =>
-                                nombre.toLowerCase().contains(pattern.toLowerCase()))
-                            .toList();
-                      },
-                      itemBuilder: (context, suggestion) {
-                        return ListTile(
+                      TypeAheadField<Padre>(
+                        suggestionsCallback: (pattern) async {
+                          if (pattern.isEmpty) return [];
+
+                          final padres = await firestore.getPadres();
+
+                          return padres
+                              ?.where((p) =>
+                                  p.nombre.toLowerCase().contains(pattern.toLowerCase()))
+                              .toList();
+                        },
+                        itemBuilder: (context, padre) => ListTile(
                           leading: const Icon(Icons.person),
-                          title: Text(suggestion),
-                        );
-                      },
-                      onSelected: (sugerencia) {
-                        setState(() {
-                          padreSeleccionado = sugerencia;
-                          textController.text = sugerencia;
-                          hijoSeleccionado = null;
-                          errorPadre = null;
-                        });
-                      },
-                      builder: (context, _controller, focusNode) {
-                        textController = _controller;
-                        return TextField(
-                          controller: textController,
-                          focusNode: focusNode,
-                          decoration: const InputDecoration(
-                            labelText: 'Buscar padre',
-                            prefixIcon: Icon(Icons.search),
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.all(Radius.circular(12)),
+                          title: Text(padre.nombre),
+                        ),
+                        onSelected: (padre) {
+                          setState(() {
+                            padreSeleccionado = padre;
+                            textController.text = padre.nombre;
+                            hijoSeleccionado = null;
+                            errorPadre = null;
+                          });
+                        },
+                        builder: (context, _controller, focusNode) {
+                          textController = _controller;
+                          return TextField(
+                            controller: textController,
+                            focusNode: focusNode,
+                            decoration: const InputDecoration(
+                              labelText: 'Buscar padre',
+                              prefixIcon: Icon(Icons.search),
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.all(Radius.circular(12)),
+                              ),
                             ),
-                          ),
-                        );
-                      },
-                    ),
+                          );
+                        },
+                      ),  
 
                       if (errorPadre != null)
                         Padding(
@@ -246,20 +256,29 @@ class RectorProvider with ChangeNotifier {
                       const SizedBox(height: 20),
 
                       if (padreSeleccionado != null)
-                        DropdownButtonFormField<String>(
-                          decoration: InputDecoration(
-                            labelText: 'Hijos de $padreSeleccionado',
-                            border: const OutlineInputBorder(),
-                          ),
-                          value: hijoSeleccionado,
-                          items: familia[padreSeleccionado]!
-                              .map((hijo) =>
-                                  DropdownMenuItem(value: hijo, child: Text(hijo)))
-                              .toList(),
-                          onChanged: (nuevo) {
-                            setState(() {
-                              hijoSeleccionado = nuevo;
-                            });
+                        FutureBuilder(
+                          future: firestore.getEstudiantes( padreSeleccionado!.documento),
+                          builder: (context, snapshot) {
+                            if (!snapshot.hasData) return CircularProgressIndicator();
+
+                            final hijos = snapshot.data!;
+
+                            return DropdownButtonFormField(
+                              decoration: InputDecoration(
+                                labelText: 'Hijos de ${padreSeleccionado!.nombre}',
+                              ),
+                              items: hijos.map((hijo) {
+                                return DropdownMenuItem(
+                                  value: hijo.nombreEstudiante,
+                                  child: Text(hijo.nombreEstudiante),
+                                );
+                              }).toList(),
+                              onChanged: (nuevo) {
+                                setState(() {
+                                  hijoSeleccionado = nuevo;
+                                });
+                              },
+                            );
                           },
                         ),
 
