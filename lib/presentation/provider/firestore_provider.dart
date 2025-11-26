@@ -1,6 +1,8 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:school_maps/domain/entities/conductor.dart';
+import 'package:school_maps/domain/entities/estudiante.dart';
 import 'package:school_maps/domain/entities/padre.dart';
 import 'package:school_maps/infrastruture/model/database_conductor_model.dart';
 import 'package:school_maps/infrastruture/model/database_estudiante_model.dart';
@@ -397,6 +399,12 @@ bool validateConductorForm() {
       return conductorDoc.get( 'rol' );
     }
 
+    DocumentSnapshot rectorDoc = await firestore.collection( 'Rector' ).doc( uId ).get();
+
+    if ( rectorDoc.exists ){
+      return rectorDoc.get( 'rol' );
+    }
+
     else {
       return null;
     }
@@ -430,5 +438,36 @@ bool validateConductorForm() {
 
     return null;
 
+  }
+
+  Future<List<Padre>> getPadres() async {
+    final snapshot = await FirebaseFirestore.instance
+      .collection('Acudientes')
+      .get();
+
+    return snapshot.docs
+        .map((doc) => DatabasePadreModel.fromFirestore(doc.data()).toPadreEntity())
+        .toList();
+  }
+
+  Future<List<Conductor>> getConductores() async {
+    final snapshot = await FirebaseFirestore.instance
+      .collection('Conductores')
+      .get();
+
+    return snapshot.docs
+        .map((doc) => DatabaseConductorModel.fromFirestore(doc.data()).toConductorEntity())
+        .toList();
+  }
+
+  Future<List<Estudiante>> getEstudiantes( int documentoPadre ) async {
+    final snapshot = await FirebaseFirestore.instance
+      .collection('Estudiantes')
+      .where('cedulaAcudiente', isEqualTo: documentoPadre)
+      .get();
+
+    return snapshot.docs
+        .map((doc) => DatabaseEstudianteModel.fromFirestore(doc.data()).toEstudianteEntity())
+        .toList();
   }
 }
