@@ -6,9 +6,9 @@ class Bus {
   final String tecnoVencimiento;
   final String monitora;
   final String soatVencimiento;
-  final String capacidad;
+  final int capacidad;
   final String extintorVencimiento;
-  final String kmRecorridos;
+  final int kmRecorridos;
 
   Bus ({
 

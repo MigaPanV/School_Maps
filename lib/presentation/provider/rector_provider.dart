@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_typeahead/flutter_typeahead.dart';
 import 'package:provider/provider.dart';
+import 'package:school_maps/domain/entities/bus.dart';
 import 'package:school_maps/domain/entities/estudiante.dart';
 import 'package:school_maps/domain/entities/padre.dart';
 import 'package:school_maps/presentation/provider/firestore_provider.dart';
@@ -60,56 +61,71 @@ class RectorProvider with ChangeNotifier {
     return true;
   }
 
-  void mostrarRutas(BuildContext context, List opciones, List seleccionadas) {
-    showModalBottomSheet(
-      context: context,
-      builder: (_) {
-        return StatefulBuilder(
-          builder: (context, setModalState) {
-            return Container(
-              padding: const EdgeInsets.all(20.0),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const Text(
-                    'Rutas Disponibles',
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.black,
+  void mostrarRutas( BuildContext context, Future<List<Bus>> opcionesFuture, List seleccionadas,) {
+  showModalBottomSheet(
+    context: context,
+    builder: (_) {
+      return StatefulBuilder(
+        builder: (context, setModalState) {
+          return Container(
+            padding: const EdgeInsets.all(20.0),
+            child: FutureBuilder<List<Bus>>(
+              future: opcionesFuture,
+              builder: (context, snapshot) {
+                if (!snapshot.hasData) {
+                  return const Center(child: CircularProgressIndicator());
+                }
+
+                final opciones = snapshot.data!;
+
+                return Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Text(
+                      'Rutas Disponibles',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.black,
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 12),
-                  ...opciones.map((opcion) {
-                    final seleccionada = seleccionadas.contains(opcion);
-                    return CheckboxListTile(
-                      title: Text(opcion),
-                      value: seleccionada,
-                      onChanged: (valor) {
-                        setModalState(() {
-                          if (valor == true) {
-                            seleccionadas.add(opcion);
-                          } else {
-                            seleccionadas.remove(opcion);
-                          }
-                        });
-                        notifyListeners();
-                      },
-                    );
-                  }).toList(),
-                  const SizedBox(height: 10),
-                  ElevatedButton(
-                    onPressed: () => Navigator.pop(context),
-                    child: const Text('Aceptar'),
-                  ),
-                ],
-              ),
-            );
-          },
-        );
-      },
-    );
-  }
+                    const SizedBox(height: 12),
+
+                    ...opciones.map((opcion) {
+                      final seleccionada = seleccionadas.contains(opcion.placa);
+                      return CheckboxListTile(
+                        title: Text(opcion.placa),
+                        value: seleccionada,
+                        onChanged: (valor) {
+                          setModalState(() {
+                            if (valor == true) {
+                              seleccionadas.add(opcion.placa);
+                              notifyListeners();
+                            } else {
+                              seleccionadas.remove(opcion.placa);
+                              notifyListeners();
+                            }
+                          });
+                        },
+                      );
+                    }),
+
+                    const SizedBox(height: 10),
+                    ElevatedButton(
+                      onPressed: () => Navigator.pop(context),
+                      child: const Text('Aceptar'),
+                      
+                    ),
+                  ],
+                );
+              },
+            ),
+          );
+        },
+      );
+    },
+  );
+}
 
   void openDialogCreateRoute(BuildContext context) async {
     final styleTitle = const TextStyle(
@@ -124,17 +140,11 @@ class RectorProvider with ChangeNotifier {
       color: Colors.black,
     );
 
-    final Map<String, List<String>> familia = {
-      'Carlos Gómez': ['Ana Gómez', 'Felipe Gómez', 'Laura Gómez'],
-      'María Torres': ['Sofía Torres', 'Daniel Torres'],
-      'Juan Pérez': ['Camilo Pérez', 'Valentina Pérez', 'Andrés Pérez'],
-      'Lucía Ramírez': ['Julio Ramírez', 'Martina Ramírez'],
-    };
-
     final firestore = Provider.of<FirestoreProvider>(context, listen: false);
 
     final listaConductores = await firestore.getConductores();
     await firestore.getPadres();
+    final listaBuses = await firestore.getBuses();
 
     Padre? padreSeleccionado;
     String? hijoSeleccionado;
@@ -181,9 +191,12 @@ class RectorProvider with ChangeNotifier {
                         decoration:
                             const InputDecoration(labelText: 'Selecciona una ruta'),
                         value: rutaSeleccionada,
-                        items: ['Ruta 1', 'Ruta 2', 'Ruta 3']
+                        items: listaBuses
                             .map((p) =>
-                                DropdownMenuItem(value: p, child: Text(p)))
+                                DropdownMenuItem(
+                                  value: p.placa, 
+                                  child: Text(p.placa)
+                                ))
                             .toList(),
                         onChanged: (value) {
                           setState(() {
@@ -212,7 +225,7 @@ class RectorProvider with ChangeNotifier {
                           final padres = await firestore.getPadres();
 
                           return padres
-                              ?.where((p) =>
+                              .where((p) =>
                                   p.nombre.toLowerCase().contains(pattern.toLowerCase()))
                               .toList();
                         },
@@ -335,7 +348,9 @@ class RectorProvider with ChangeNotifier {
                               // aquí se llama a Firestore para guardar la asignación (creo ud sabe mas)
 
                               Navigator.pop(context);
-                              notifyListeners();
+                              WidgetsBinding.instance.addPostFrameCallback((_) {
+                                notifyListeners();
+                              });
                             },
                             child: const Text('Guardar'),
                           ),

@@ -1,9 +1,11 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:school_maps/domain/entities/bus.dart';
 import 'package:school_maps/domain/entities/conductor.dart';
 import 'package:school_maps/domain/entities/estudiante.dart';
 import 'package:school_maps/domain/entities/padre.dart';
+import 'package:school_maps/infrastruture/model/database_bus_model.dart';
 import 'package:school_maps/infrastruture/model/database_conductor_model.dart';
 import 'package:school_maps/infrastruture/model/database_estudiante_model.dart';
 import 'package:school_maps/infrastruture/model/database_padre_model.dart';
@@ -36,8 +38,16 @@ class FirestoreProvider extends ChangeNotifier {
 
   String nombreEstudiante = '';
   int documentoEstudiante = 0;
+
+  // * Variables Bus
   
   String placaRutaAsignada = '';
+  String tecnoVencimiento = '';
+  String monitora = '';
+  String soatVencimiento = '';
+  int capacidad = 0;
+  String extintorVencimiento = '';
+  int kmRecorridos = 0;
   
   String? errorNombre;
   String? errorDocumento;
@@ -90,28 +100,28 @@ class FirestoreProvider extends ChangeNotifier {
   // * Funciones Getter Conductor
 
   void getNombreConductor(String value) {
-  nombreConductor = value.trim();
-  errorNombreConductor = null;
-  notifyListeners();
-}
+    nombreConductor = value.trim();
+    errorNombreConductor = null;
+    notifyListeners();
+  }
 
-void getDocumentoConductor(String value) {
-  documentoConductor = int.parse( value.trim() );
-  errorDocumentoConductor = null;
-  notifyListeners();
-}
+  void getDocumentoConductor(String value) {
+    documentoConductor = int.parse( value.trim() );
+    errorDocumentoConductor = null;
+    notifyListeners();
+  }
 
-void getCorreoConductor(String value) {
-  correoConductor = value.trim();
-  errorCorreoConductor = null;
-  notifyListeners();
-}
+  void getCorreoConductor(String value) {
+    correoConductor = value.trim();
+    errorCorreoConductor = null;
+    notifyListeners();
+  }
 
-void getFechaVencimientoLicencia(String value) {
-  fechavencimientoLicencia = value.trim();
-  errorFechaLicencia = null;
-  notifyListeners();
-}
+  void getFechaVencimientoLicencia(String value) {
+    fechavencimientoLicencia = value.trim();
+    errorFechaLicencia = null;
+    notifyListeners();
+  }
 
   // * Funciones Getter Estudiante
 
@@ -128,10 +138,40 @@ void getFechaVencimientoLicencia(String value) {
   // * Funciones Getter Bus
 
   void getPlaca(String value) {
-  placaRutaAsignada = value.trim();
-  errorPlacaConductor = null;
-  notifyListeners();
-}
+    placaRutaAsignada = value.trim();
+    errorPlacaConductor = null;
+    notifyListeners();
+  }
+
+  void getTecnoVencimiento( String value ){
+    tecnoVencimiento = value.trim();
+    notifyListeners();
+  }
+
+  void getMonitora( String value ){
+    monitora = value.trim();
+    notifyListeners();
+  }
+
+  void getSoatVencimiento( String value ){
+    soatVencimiento = value. trim();
+    notifyListeners();
+  }
+
+  void getCapacidad( String value ){
+    capacidad = int.parse( value. trim() );
+    notifyListeners();
+  }
+
+  void getExtintorVencimiento( String value ){
+    extintorVencimiento = value.trim();
+    notifyListeners();
+  }
+
+  void getkmRecorridos( String value ){
+    kmRecorridos = int.parse( value. trim() );
+    notifyListeners();
+  }
 
   bool validateForm() {
     bool valid = true;
@@ -166,77 +206,77 @@ void getFechaVencimientoLicencia(String value) {
   }
 
   void resetPadreFormulario() {
-  nombrePadre = '';
-  documentoPadre = 0;
-  correo = '';
-  direccion = '';
-  placaRutaAsignada = '';
+    nombrePadre = '';
+    documentoPadre = 0;
+    correo = '';
+    direccion = '';
+    placaRutaAsignada = '';
+    
+    documentoHijo = [];
+    documentoHijoTemp = "";
   
-  documentoHijo = [];
-  documentoHijoTemp = "";
-
-  errorNombre = null;
-  errorDocumento = null;
-  errorCorreo = null;
-  errorDireccion = null;
-  errorDocumentoHijo = null;
-  errorPlaca = null;
-  errorGeneral = null;
-
-  isUploaded = false;
-  isLoading = false;
-
-  notifyListeners();
-}
-
-void resetConductorFormulario() {
-  nombreConductor = "";
-  documentoConductor = 0;
-  correoConductor = "";
-  fechavencimientoLicencia = "";
-  placaRutaAsignada = "";
-
-  errorNombreConductor = null;
-  errorDocumentoConductor = null;
-  errorCorreoConductor = null;
-  errorFechaLicencia = null;
-  errorPlacaConductor = null;
-
-  isUploaded = false;
-  notifyListeners();
-}
-
-bool validateConductorForm() {
-  bool valid = true;
-
-  if (nombreConductor.isEmpty) {
-    errorNombreConductor = "Campo requerido";
-    valid = false;
+    errorNombre = null;
+    errorDocumento = null;
+    errorCorreo = null;
+    errorDireccion = null;
+    errorDocumentoHijo = null;
+    errorPlaca = null;
+    errorGeneral = null;
+  
+    isUploaded = false;
+    isLoading = false;
+  
+    notifyListeners();
   }
 
-  if (documentoConductor == 0) {
-    errorDocumentoConductor = "Campo requerido";
-    valid = false;
+  void resetConductorFormulario() {
+    nombreConductor = "";
+    documentoConductor = 0;
+    correoConductor = "";
+    fechavencimientoLicencia = "";
+    placaRutaAsignada = "";
+
+    errorNombreConductor = null;
+    errorDocumentoConductor = null;
+    errorCorreoConductor = null;
+    errorFechaLicencia = null;
+    errorPlacaConductor = null;
+
+    isUploaded = false;
+    notifyListeners();
   }
 
-  if (correoConductor.isEmpty || !correoConductor.contains("@")) {
-    errorCorreoConductor = "Correo inválido";
-    valid = false;
-  }
+  bool validateConductorForm() {
+    bool valid = true;
 
-  if (fechavencimientoLicencia.isEmpty) {
-    errorFechaLicencia = "Campo requerido";
-    valid = false;
-  }
+    if (nombreConductor.isEmpty) {
+      errorNombreConductor = "Campo requerido";
+      valid = false;
+    }
 
-  if (placaRutaAsignada.isEmpty) {
-    errorPlacaConductor = "Campo requerido";
-    valid = false;
-  }
+    if (documentoConductor == 0) {
+      errorDocumentoConductor = "Campo requerido";
+      valid = false;
+    }
 
-  notifyListeners();
-  return valid;
-}
+    if (correoConductor.isEmpty || !correoConductor.contains("@")) {
+      errorCorreoConductor = "Correo inválido";
+      valid = false;
+    }
+
+    if (fechavencimientoLicencia.isEmpty) {
+      errorFechaLicencia = "Campo requerido";
+      valid = false;
+    }
+
+    if (placaRutaAsignada.isEmpty) {
+      errorPlacaConductor = "Campo requerido";
+      valid = false;
+    }
+
+    notifyListeners();
+    return valid;
+  }
 
   void addDocumentoHijo() {
     final entero = int.tryParse(documentoHijoTemp);
@@ -353,15 +393,15 @@ bool validateConductorForm() {
         placaRutaAsignada: placaRutaAsignada
       );
 
-    await FirebaseAuth.instance.currentUser?.getIdToken(true);
+      await FirebaseAuth.instance.currentUser?.getIdToken(true);
 
-    final callable = FirebaseFunctions.instance.httpsCallable('createDriver');
+      final callable = FirebaseFunctions.instance.httpsCallable('createDriver');
 
-    final result = await callable.call({
-      'correo': correoConductor.trim(),
-      'password': documentoConductor.toString(),
-      'rol': 'Conductor',
-    });
+      final result = await callable.call({
+        'correo': correoConductor.trim(),
+        'password': documentoConductor.toString(),
+        'rol': 'Conductor',
+      });
       await firestore.collection( 'Conductores' ).doc( result.data[ 'uid' ] ).set({
         ...conductor.toFirestore(),
         'rol' : 'Conductor'
@@ -370,8 +410,8 @@ bool validateConductorForm() {
       isUploaded = true;
       notifyListeners();
 
-  } on FirebaseException catch (e) {
-    errorGeneral = e.message ?? 'Error al guardar en la base de datos.';
+    } on FirebaseException catch (e) {
+      errorGeneral = e.message ?? 'Error al guardar en la base de datos.';
     }finally {
 
       isLoading = false;
@@ -382,6 +422,37 @@ bool validateConductorForm() {
 
 
   Future<void> addBus() async {
+
+    try{
+
+      isLoading = true;
+      isUploaded = false;
+      notifyListeners();
+
+      final bus = DatabaseBusModel(
+        placa: placaRutaAsignada, 
+        nombreConductor: nombreConductor, 
+        tecnoVencimiento: tecnoVencimiento, 
+        soatVencimiento: soatVencimiento, 
+        monitora: monitora, 
+        capacidad: capacidad, 
+        extintorVencimiento: extintorVencimiento, 
+        kmRecorridos: kmRecorridos
+      );
+
+      await firestore.collection( 'Buses' ).doc( bus.placa ).set({
+        ...bus.toFirestore()
+      });
+
+      isUploaded = true;
+
+    } on FirebaseException catch (e){
+      errorGeneral = e.message ?? 'Error al guardar en la base de datos.';
+    } finally {
+
+      isLoading = false;
+      notifyListeners();
+    }
 
   }
 
@@ -469,5 +540,19 @@ bool validateConductorForm() {
     return snapshot.docs
         .map((doc) => DatabaseEstudianteModel.fromFirestore(doc.data()).toEstudianteEntity())
         .toList();
+  }
+
+  Future<List<Bus>> getBuses() async {
+    try{
+      final snapshot = await FirebaseFirestore.instance
+        .collection('Buses')
+        .get();
+
+    return snapshot.docs
+        .map((doc) => DatabaseBusModel.fromFirestore(doc.data()).toBusEntity())
+        .toList();
+    } on FirebaseException catch ( e ){
+      throw Exception('Error al obtener los buses: ${ e.message }');
+    }
   }
 }

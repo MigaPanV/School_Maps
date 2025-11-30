@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:school_maps/presentation/provider/auth_provider.dart';
 import 'package:school_maps/presentation/screens/conductor/conductor_est.dart';
 import 'package:school_maps/presentation/screens/conductor/conductor_finRuta.dart';
+import 'package:school_maps/presentation/screens/maps/route_tracking_page.dart';
 import 'package:school_maps/presentation/widget/shared/custom_profile.dart';
 
 class CondScreen extends StatefulWidget {
@@ -193,12 +194,7 @@ class _CondScreenState extends State<CondScreen> {
 
             Expanded(
               child: Center(
-                child: FilledButton(
-                  onPressed: () {
-                    authProvider.signOut();
-                  },
-                  child: const Text('Cerrar sesión'),
-                ),
+                child: RouteTrackingPage()
               ),
             ),
 

@@ -106,7 +106,8 @@ class AddPadre extends StatelessWidget {
                                   labeltext: 'Ingrese correo acudiente',
                                   onChanged: firestore.getCorreoAcudiente,
                                 ),
-                            SizedBox(height: 20),
+                                
+                                SizedBox(height: 20),
 
                                 CustomTextField(
                                   errorText: firestore.errorDireccion, 
@@ -114,50 +115,54 @@ class AddPadre extends StatelessWidget {
                                   onChanged: firestore.getDireccion,
                                 ),
 
-                            SizedBox(height: 20),
+                                SizedBox(height: 20),
 
-                            Text( 'Estudiante' ),
+                                Text( 'Estudiante' ),
+
+                                SizedBox(height: 20),
+
+                                    CustomTextField(
+                                      errorText: firestore.errorDocumentoHijo, 
+                                      labeltext: 'Ingrese documento estudiante',
+                                      onChanged: firestore.getDocumentoHijo,
+                                    ),
+                                SizedBox(height: 20),
+
+                                Text( 'Bus' ),
+
+                                SizedBox(height: 20),
 
                                 CustomTextField(
-                                  errorText: firestore.errorDocumentoHijo, 
-                                  labeltext: 'Ingrese documento estudiante',
-                                  onChanged: firestore.getDocumentoHijo,
+                                  errorText: firestore.errorPlaca, 
+                                  labeltext: 'Ingrese placa ruta asignada',
+                                  onChanged: firestore.getPlaca,
                                 ),
-                            SizedBox(height: 20),
-                            
-                            Text( 'Bus' ),
 
-                            CustomTextField(
-                              errorText: firestore.errorPlaca, 
-                              labeltext: 'Ingrese placa ruta asignada',
-                              onChanged: firestore.getPlaca,
-                            ),
+                                SizedBox(height: 20),
 
-                            SizedBox(height: 20),
-                        
-                            ElevatedButton(
-                            onPressed: () async{
-                              firestore.addDocumentoHijo();
-                              await firestore.addPadre();
-                              },
-                              child: Text('Guardar'),
-                              ),
-
-                              if (firestore.errorGeneral != null)
-                                Text(
-                                  firestore.errorGeneral!,
-                                  style: TextStyle(color: Colors.red),
+                                ElevatedButton(
+                                onPressed: () async{
+                                  firestore.addDocumentoHijo();
+                                  await firestore.addPadre();
+                                  },
+                                  child: Text('Guardar'),
                                   ),
-                                ],
-                              )
-                            ),                            
-                          ),
+
+                                  if (firestore.errorGeneral != null)
+                                    Text(
+                                      firestore.errorGeneral!,
+                                      style: TextStyle(color: Colors.red),
+                                    ),
+                              ],
+                            )
+                          ),                            
                         ),
                       ),
                     ),
                   ),
                 ),
-              );
+              ),
+            );
           }
         ),
       )

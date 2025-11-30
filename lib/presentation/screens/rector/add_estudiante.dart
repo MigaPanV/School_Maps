@@ -49,7 +49,7 @@ class AddEstudiante extends StatelessWidget {
       child: Scaffold(
         appBar: AppBar(
 
-          title: Text( 'Añadir Acudiente' ),
+          title: Text( 'Añadir Estudiante' ),
 
         ),
         body: firestore.isLoading == true 

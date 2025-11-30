@@ -8,9 +8,9 @@ class DatabaseBusModel {
   final String tecnoVencimiento;
   final String monitora;
   final String soatVencimiento;
-  final String capacidad;
+  final int capacidad;
   final String extintorVencimiento;
-  final String kmRecorridos;
+  final int kmRecorridos;
 
   DatabaseBusModel ({
 
@@ -47,7 +47,7 @@ class DatabaseBusModel {
     'kmRecorridos' : kmRecorridos,
   };
 
-  Bus toModelEntity() => Bus(
+  Bus toBusEntity() => Bus(
     placa: placa, 
     nombreConductor: nombreConductor, 
     tecnoVencimiento: tecnoVencimiento, 
