@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:school_maps/presentation/screens/maps/route_tracking_page.dart';
 import 'package:school_maps/presentation/widget/shared/custom_profile.dart';
 import 'package:provider/provider.dart';
 import 'package:school_maps/presentation/provider/auth_provider.dart';
@@ -150,39 +151,42 @@ class _PadreScreenState extends State<PadreScreen> {
             ),
           ],
         ),
-        body: Column(
-          mainAxisAlignment: MainAxisAlignment.start,
-          children: [
-            const SizedBox(height: 30),
-            const Center(
-              child: Text(
-                'Ubicación de tu hijo...',
-                style: TextStyle(
-                  fontSize: 22,
-                  fontWeight: FontWeight.w500,
+        body: Center(
+          child:Column(
+              mainAxisAlignment: MainAxisAlignment.start,
+              children: [
+                
+                const SizedBox(height: 30),
+                
+                Expanded(
+                  child: Center(
+                    child: RouteTrackingPage()
+                  )
                 ),
-              ),
-            ),
-            const Spacer(),
-            Center(
-              child: SizedBox(
-                width: MediaQuery.of(context).size.width * 0.4,
-                child: ElevatedButton(
-                  onPressed: () => _mostrarVentanaReporte(context),
-                  child: const Text('Reportar'),
-                ),
-              ),
-            ),
-            const SizedBox(height: 40),
+                
+                const SizedBox(height: 40),
 
-            ElevatedButton(
-                  onPressed: () {
-                    authProvider.signOut();
-                  },
-                  child: const Text('cerrar sesión'),
+                Center(
+                  child: SizedBox(
+                    width: MediaQuery.of(context).size.width * 0.4,
+                    child: ElevatedButton(
+                      onPressed: () => _mostrarVentanaReporte(context),
+                      child: const Text('Reportar'),
+                    ),
+                  ),
                 ),
-
-          ],
+                const SizedBox(height: 40),
+            
+                ElevatedButton(
+                      onPressed: () {
+                        authProvider.signOut();
+                      },
+                      child: const Text('cerrar sesión'),
+                    ),
+            
+              ],
+            ),
+          
         ),
       ),
     );

@@ -126,11 +126,60 @@ class AddConductor extends StatelessWidget {
                                 ),
 
                                 SizedBox(height: 20),
+
+                                CustomTextField(
+                                  errorText: firestore.errorPlacaConductor, 
+                                  labeltext: 'Ingrese vencimiento tecnomecanica',
+                                  onChanged: firestore.getTecnoVencimiento
+                                ),
+
+                                SizedBox(height: 20),
+
+                                CustomTextField(
+                                  errorText: firestore.errorPlacaConductor, 
+                                  labeltext: 'Ingrese nombre monitora',
+                                  onChanged: firestore.getMonitora,
+                                ),
+
+                                SizedBox(height: 20),
+
+                                CustomTextField(
+                                  errorText: firestore.errorPlacaConductor, 
+                                  labeltext: 'Ingrese vencimiento soat',
+                                  onChanged: firestore.getSoatVencimiento,
+                                ),
+
+                                SizedBox(height: 20),
+
+                                CustomTextField(
+                                  errorText: firestore.errorPlacaConductor, 
+                                  labeltext: 'Ingrese capacidad max. ruta',
+                                  onChanged: firestore.getCapacidad,
+                                ),
+
+                                SizedBox(height: 20),
+
+                                CustomTextField(
+                                  errorText: firestore.errorPlacaConductor, 
+                                  labeltext: 'Ingrese vencimiento extintor',
+                                  onChanged: firestore.getExtintorVencimiento,
+                                ),
+
+                                SizedBox(height: 20),
+
+                                CustomTextField(
+                                  errorText: firestore.errorPlacaConductor, 
+                                  labeltext: 'Ingrese km recorridos',
+                                  onChanged: firestore.getkmRecorridos,
+                                ),
+
+                                SizedBox(height: 20),
                             
                                 ElevatedButton(
                                   onPressed: () async{
                                     
                                     await firestore.addConductor();
+                                    await firestore.addBus();
                                     
                                   }, 
                                   child: Text( 'Guardar' )
