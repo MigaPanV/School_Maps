@@ -205,6 +205,51 @@ class FirestoreProvider extends ChangeNotifier {
     return valid;
   }
 
+  bool validateEstudianteForm() {
+  bool valid = true;
+
+  if (nombreEstudiante.isEmpty) {
+    errorNombre = "Campo requerido";
+    valid = false;
+  }
+
+  if (documentoEstudiante == 0) {
+    errorDocumento = "Campo requerido";
+    valid = false;
+  }
+
+  if (direccion.isEmpty) {
+    errorDireccion = "Campo requerido";
+    valid = false;
+  }
+
+  if (placaRutaAsignada.isEmpty) {
+    errorPlaca = "Campo requerido";
+    valid = false;
+  }
+
+  notifyListeners();
+  return valid;
+}
+
+void resetEstudianteFormulario() {
+  nombreEstudiante = "";
+  documentoEstudiante = 0;
+  direccion = "";
+  placaRutaAsignada = "";
+
+  errorNombre = null;
+  errorDocumento = null;
+  errorDireccion = null;
+  errorPlaca = null;
+  errorGeneral = null;
+
+  isUploaded = false;
+  isLoading = false;
+
+  notifyListeners();
+}
+
   void resetPadreFormulario() {
     nombrePadre = '';
     documentoPadre = 0;
@@ -236,6 +281,12 @@ class FirestoreProvider extends ChangeNotifier {
     fechavencimientoLicencia = "";
     placaRutaAsignada = "";
 
+void resetConductorFormulario() {
+  nombreConductor = "";
+  documentoConductor = 0;
+  correoConductor = "";
+  fechavencimientoLicencia = "";
+  placaRutaAsignada = "";
     errorNombreConductor = null;
     errorDocumentoConductor = null;
     errorCorreoConductor = null;
@@ -259,6 +310,10 @@ class FirestoreProvider extends ChangeNotifier {
       valid = false;
     }
 
+  if (documentoConductor == 0) {
+    errorDocumentoConductor = "Campo requerido";
+    valid = false;
+  }
     if (correoConductor.isEmpty || !correoConductor.contains("@")) {
       errorCorreoConductor = "Correo inválido";
       valid = false;
@@ -341,40 +396,41 @@ class FirestoreProvider extends ChangeNotifier {
   }
 
   Future<void> addEstudiante() async {
+  if (!validateEstudianteForm()) return;
 
-    try{
+  try {
+    isLoading = true;
+    isUploaded = false;
+    errorGeneral = null;
+    notifyListeners();
 
-      isLoading = true;
-      isUploaded = false;
-      notifyListeners();
+    final estudiante = DatabaseEstudianteModel(
+      nombreEstudiante: nombreEstudiante,
+      documento: documentoEstudiante,
+      cedulaAcudiente: documentoPadre,
+      placaRutaAsignada: placaRutaAsignada,
+      direccion: direccion
+    );
 
-      final estudiante = DatabaseEstudianteModel(
-        nombreEstudiante: nombreEstudiante, 
-        documento: documentoEstudiante, 
-        cedulaAcudiente: documentoPadre, 
-        placaRutaAsignada: placaRutaAsignada, 
-        direccion: direccion
-      );
+    await firestore
+        .collection('Estudiantes')
+        .doc(estudiante.documento.toString())
+        .set({
+      ...estudiante.toFirestore()
+    });
 
-      await firestore.collection( 'Estudiantes' ).doc( estudiante.documento.toString() ).set({
-        ...estudiante.toFirestore()
-      });
+    isUploaded = true;
+    notifyListeners();
 
-      isUploaded = true;
-      notifyListeners();
-
-    }on FirebaseException catch (e) {
-
-      errorGeneral = e.message ?? "Error al guardar en la base de datos";
-
-    } finally {
-
-      isLoading = false;
-      notifyListeners();
-
-    }
-
+  } on FirebaseException catch (e) {
+    errorGeneral = e.message ?? "Error al guardar en la base de datos";
+  } catch (e) {
+    errorGeneral = "Error inesperado: ${e.toString()}";
+  } finally {
+    isLoading = false;
+    notifyListeners();
   }
+}
 
   Future<void> addConductor() async {
   if (!validateConductorForm()) return;

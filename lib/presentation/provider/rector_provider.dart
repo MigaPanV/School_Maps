@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_typeahead/flutter_typeahead.dart';
 import 'package:provider/provider.dart';
+import 'package:school_maps/domain/entities/conductor.dart';
 import 'package:school_maps/domain/entities/bus.dart';
 import 'package:school_maps/domain/entities/estudiante.dart';
 import 'package:school_maps/domain/entities/padre.dart';
@@ -8,34 +9,98 @@ import 'package:school_maps/presentation/provider/firestore_provider.dart';
 
 class RectorProvider with ChangeNotifier {
 
-  List<String> seleccionadas = [];
-
-  String? conductorSeleccionado;
   List<String> puntosRuta = [];
   String puntoRuta = '';
   String? errorPuntoRuta;
 
+  String? conductorSeleccionado;
   String? errorPopup;
 
+  List<String> seleccionadas = [];
+
+  void mostrarRutas(BuildContext context, List<String> opciones, List<String> seleccionadas) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      builder: (_) {
+        return StatefulBuilder(
+          builder: (context, setModalState) {
+            return Container(
+              padding: const EdgeInsets.all(20),
+              height: MediaQuery.of(context).size.height * 0.6,
+              child: Column(
+                children: [
+                  const Text(
+                    'Rutas Disponibles',
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                  ),
+                  const SizedBox(height: 16),
+                  Expanded(
+                    child: ListView(
+                      children: opciones.map((opcion) {
+                        final estaSeleccionada = seleccionadas.contains(opcion);
+                        return CheckboxListTile(
+                          title: Text(opcion),
+                          value: estaSeleccionada,
+                          onChanged: (value) {
+                            setModalState(() {
+                              if (value == true) {
+                                seleccionadas.add(opcion);
+                              } else {
+                                seleccionadas.remove(opcion);
+                              }
+                            });
+                            notifyListeners();
+                          },
+                        );
+                      }).toList(),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  ElevatedButton(
+                    onPressed: () => Navigator.pop(context),
+                    child: const Text('Aceptar'),
+                  ),
+                ],
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
   void setPuntoRuta(String value) {
-    puntoRuta = value;
+    puntoRuta = value.trim();
     errorPuntoRuta = null;
     notifyListeners();
   }
 
   bool validarPuntoRuta() {
-    final regex = RegExp(
-      r'^(Calle|Carrera|Diagonal|Transversal)\s+\d+[A-Za-z]?\s*#\s*\d+[A-Za-z]?$',
-      caseSensitive: false,
-    );
-
-    if (!regex.hasMatch(puntoRuta)) {
-      errorPuntoRuta = 'Formato inválido. Ej: Calle 45 # 20';
+    if (puntoRuta.isEmpty) {
+      errorPuntoRuta = 'El punto no puede estar vacío';
       notifyListeners();
       return false;
     }
-
+    final regex = RegExp(
+      r'^(Calle|Carrera|Diagonal|Transversal)\s+\d+[A-Za-z]?\s*#\s*\d+[A-Za-z]?-?\d*[A-Za-z]?$',
+      caseSensitive: false,
+    );
+    if (!regex.hasMatch(puntoRuta)) {
+      errorPuntoRuta = 'Formato inválido. Ej: Calle 45 # 20-15';
+      notifyListeners();
+      return false;
+    }
+    puntosRuta.add(puntoRuta);
+    puntoRuta = '';
+    errorPuntoRuta = null;
+    notifyListeners();
     return true;
+  }
+
+  void eliminarPuntoRuta(int index) {
+    puntosRuta.removeAt(index);
+    notifyListeners();
   }
 
   void seleccionarConductor(String? value) {
@@ -50,13 +115,11 @@ class RectorProvider with ChangeNotifier {
       notifyListeners();
       return false;
     }
-
     if (requirePuntos && puntosRuta.isEmpty) {
-      errorPopup = 'Debe agregar mínimo un punto de ruta';
+      errorPopup = 'Debe agregar al menos un punto de ruta';
       notifyListeners();
       return false;
     }
-
     errorPopup = null;
     return true;
   }
@@ -149,7 +212,9 @@ class RectorProvider with ChangeNotifier {
     Padre? padreSeleccionado;
     String? hijoSeleccionado;
     String? rutaSeleccionada;
+
     String? errorPadre;
+    String? errorHijo;
     String? errorRuta;
 
     TextEditingController textController = TextEditingController();
@@ -205,16 +270,17 @@ class RectorProvider with ChangeNotifier {
                           });
                         },
                       ),
-                      if (errorRuta != null)
-                        Padding(
-                          padding: const EdgeInsets.only(top: 8.0),
-                          child: Text(
-                            errorRuta ?? '',
-                            style: const TextStyle(color: Colors.red, fontSize: 13),
-                          ),
-                        ),
-
-                      const SizedBox(height: 20),
+                      items: ['Ruta 1', 'Ruta 2', 'Ruta 3']
+                          .map((r) => DropdownMenuItem(value: r, child: Text(r)))
+                          .toList(),
+                      onChanged: (value) {
+                        setState(() {
+                          rutaSeleccionada = value;
+                          errorRuta = null;
+                        });
+                      },
+                    ),
+                    const SizedBox(height: 20),
 
                       Text('Asignar padre', style: styleTitle),
                       const SizedBox(height: 12),
@@ -321,8 +387,8 @@ class RectorProvider with ChangeNotifier {
                           ElevatedButton(
                             onPressed: () {
                               setState(() {
-                                errorPadre = null;
-                                errorRuta = null;
+                                hijoSeleccionado = value;
+                                errorHijo = null;
                               });
 
                               if (rutaSeleccionada == null) {
@@ -352,20 +418,53 @@ class RectorProvider with ChangeNotifier {
                                 notifyListeners();
                               });
                             },
-                            child: const Text('Guardar'),
-                          ),
-                        ],
+                          );
+                        },
                       ),
                     ],
-                  ),
+
+                    const SizedBox(height: 20),
+                    if (errorPopup != null)
+                      Text(errorPopup!, style: const TextStyle(color: Colors.red)),
+                  ],
                 ),
-              );
-            },
+              ),
+            ),
+            actions: [
+              TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancelar')),
+              ElevatedButton(
+                onPressed: () {
+                  setState(() {
+                    errorPadre = null;
+                    errorRuta = null;
+                    errorHijo = null;
+                    errorPopup = null;
+                  });
+
+                  if (conductorSeleccionado == null) errorPopup = 'Seleccione un conductor';
+                  if (rutaSeleccionada == null) errorRuta = 'Seleccione una ruta';
+                  if (padreSeleccionado == null) errorPadre = 'Seleccione un padre';
+                  if (padreSeleccionado != null && hijoSeleccionado == null) {
+                    errorHijo = 'Seleccione un hijo';
+                  }
+
+                  if (errorPopup != null || errorRuta != null || errorPadre != null || errorHijo != null) {
+                    setState(() {});
+                    return;
+                  }
+
+                  // ÉXITO
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('¡Estudiante asignado correctamente!')),
+                  );
+                  Navigator.pop(context);
+                },
+                child: const Text('Guardar'),
+              ),
+            ],
           );
         },
       ),
     );
   }
-
-  
 }
