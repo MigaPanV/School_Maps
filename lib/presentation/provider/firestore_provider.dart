@@ -274,13 +274,6 @@ void resetEstudianteFormulario() {
     notifyListeners();
   }
 
-  void resetConductorFormulario() {
-    nombreConductor = "";
-    documentoConductor = 0;
-    correoConductor = "";
-    fechavencimientoLicencia = "";
-    placaRutaAsignada = "";
-
 void resetConductorFormulario() {
   nombreConductor = "";
   documentoConductor = 0;
