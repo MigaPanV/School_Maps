@@ -13,7 +13,7 @@ class Estudiante{
     required this.nombreEstudiante,
     required this.documento,
     required this.cedulaAcudiente,
-    required this.placaRutaAsignada,
+    this.placaRutaAsignada = '',
     required this.direccion,
 
     this.recogido = false

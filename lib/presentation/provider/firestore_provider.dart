@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:school_maps/domain/entities/bus.dart';
 import 'package:school_maps/domain/entities/conductor.dart';
 import 'package:school_maps/domain/entities/estudiante.dart';
@@ -9,8 +10,9 @@ import 'package:school_maps/infrastruture/model/database_bus_model.dart';
 import 'package:school_maps/infrastruture/model/database_conductor_model.dart';
 import 'package:school_maps/infrastruture/model/database_estudiante_model.dart';
 import 'package:school_maps/infrastruture/model/database_padre_model.dart';
-import 'package:school_maps/presentation/provider/auth_provider.dart';
 import 'package:cloud_functions/cloud_functions.dart';
+import 'package:collection/collection.dart';
+
 
 class FirestoreProvider extends ChangeNotifier {
 
@@ -192,14 +194,14 @@ class FirestoreProvider extends ChangeNotifier {
       errorDireccion = "Campo requerido";
       valid = false;
     }
-    if (documentoHijo.isEmpty) {
-      errorDocumentoHijo = "Campo requerido";
-      valid = false;
-    }
-    if (placaRutaAsignada.isEmpty) {
-      errorPlaca = "Campo requerido";
-      valid = false;
-    }
+    // if (documentoHijo.isEmpty) {
+    //   errorDocumentoHijo = "Campo requerido";
+    //   valid = false;
+    // }
+    // if (placaRutaAsignada.isEmpty) {
+    //   errorPlaca = "Campo requerido";
+    //   valid = false;
+    // }
 
     notifyListeners();
     return valid;
@@ -223,10 +225,10 @@ class FirestoreProvider extends ChangeNotifier {
     valid = false;
   }
 
-  if (placaRutaAsignada.isEmpty) {
-    errorPlaca = "Campo requerido";
-    valid = false;
-  }
+  // if (placaRutaAsignada.isEmpty) {
+  //   errorPlaca = "Campo requerido";
+  //   valid = false;
+  // }
 
   notifyListeners();
   return valid;
@@ -347,15 +349,6 @@ void resetConductorFormulario() {
       errorGeneral = null;
       notifyListeners();
 
-      final padre = DatabasePadreModel(
-        nombrePadre: nombrePadre,
-        documento: documentoPadre,
-        correo: correo,
-        direccion: direccion,
-        documentoHijo: documentoHijo,
-        placaRutaAsignada: placaRutaAsignada,
-      );
-
       await FirebaseAuth.instance.currentUser?.getIdToken(true);
 
       final callable = FirebaseFunctions.instance.httpsCallable('createFather');
@@ -365,6 +358,34 @@ void resetConductorFormulario() {
         "password": documentoPadre.toString(),
         "rol": "Padre",
       });
+
+      DatabasePadreModel padre = DatabasePadreModel(
+        nombre: nombrePadre,
+        documento: documentoPadre,
+        correo: correo,
+        direccion: direccion,
+        uId: result.data[ 'uid' ],
+        // documentoHijo: documentoHijo,
+        // placaRutaAsignada: placaRutaAsignada,
+      );
+
+      final estudiantesEncontrado = await getEstudiantes(padre.documento);
+
+      if( estudiantesEncontrado.isNotEmpty ){
+        for( int i = 0; i < estudiantesEncontrado.length; i++ ){
+          documentoHijo.add( estudiantesEncontrado[i].documento);
+        }
+
+        padre = DatabasePadreModel(
+        nombre: nombrePadre,
+        documento: documentoPadre,
+        correo: correo,
+        direccion: direccion,
+        uId: result.data[ 'uid' ],
+        documentoHijo: documentoHijo,
+        // placaRutaAsignada: placaRutaAsignada,
+      );
+      }
 
       await firestore.collection( 'Acudientes' ).doc( result.data[ 'uid' ] ).set( {
         ...padre.toFirebase(),
@@ -389,41 +410,53 @@ void resetConductorFormulario() {
   }
 
   Future<void> addEstudiante() async {
-  if (!validateEstudianteForm()) return;
+    if (!validateEstudianteForm()) return;
 
-  try {
-    isLoading = true;
-    isUploaded = false;
-    errorGeneral = null;
-    notifyListeners();
+    try {
+      isLoading = true;
+      isUploaded = false;
+      errorGeneral = null;
+      notifyListeners();
 
-    final estudiante = DatabaseEstudianteModel(
-      nombreEstudiante: nombreEstudiante,
-      documento: documentoEstudiante,
-      cedulaAcudiente: documentoPadre,
-      placaRutaAsignada: placaRutaAsignada,
-      direccion: direccion
-    );
+      final padres = await getPadres();
 
-    await firestore
-        .collection('Estudiantes')
-        .doc(estudiante.documento.toString())
-        .set({
-      ...estudiante.toFirestore()
-    });
+      final estudiante = DatabaseEstudianteModel(
+        nombreEstudiante: nombreEstudiante,
+        documento: documentoEstudiante,
+        cedulaAcudiente: documentoPadre,
+        // placaRutaAsignada: placaRutaAsignada,
+        direccion: direccion
+      );
 
-    isUploaded = true;
-    notifyListeners();
+      Padre? padreEncontrado = padres.firstWhereOrNull(
+        (p) => p.documento == estudiante.cedulaAcudiente,
+      );
 
-  } on FirebaseException catch (e) {
-    errorGeneral = e.message ?? "Error al guardar en la base de datos";
-  } catch (e) {
-    errorGeneral = "Error inesperado: ${e.toString()}";
-  } finally {
-    isLoading = false;
-    notifyListeners();
+      if( padreEncontrado != null ){
+        padreEncontrado.documentoHijo.add( estudiante.documento );
+
+        await firestore.collection( 'Acudientes' ).doc( padreEncontrado.uId ).update( { 'documentoHijo' : padreEncontrado.documentoHijo} );
+      }
+        
+      await firestore
+          .collection('Estudiantes')
+          .doc(estudiante.documento.toString())
+          .set({
+        ...estudiante.toFirestore()
+      });
+
+      isUploaded = true;
+      notifyListeners();
+
+    } on FirebaseException catch (e) {
+      errorGeneral = e.message ?? "Error al guardar en la base de datos";
+    } catch (e) {
+      errorGeneral = "Error inesperado: ${e.toString()}";
+    } finally {
+      isLoading = false;
+      notifyListeners();
+    }
   }
-}
 
   Future<void> addConductor() async {
   if (!validateConductorForm()) return;
@@ -591,6 +624,20 @@ void resetConductorFormulario() {
         .toList();
   }
 
+  Future<List<Estudiante>> getEstudiantesAll() async{
+    try{
+      final snapshot = await FirebaseFirestore.instance
+      .collection('Estudiantes')
+      .get();
+
+      return snapshot.docs
+          .map((doc) => DatabaseEstudianteModel.fromFirestore(doc.data()).toEstudianteEntity())
+          .toList();
+    }on FirebaseException catch ( e ){
+      throw Exception('Error al obtener los estudiantes: ${ e.message }');
+    }
+  }
+
   Future<List<Bus>> getBuses() async {
     try{
       final snapshot = await FirebaseFirestore.instance
@@ -604,4 +651,76 @@ void resetConductorFormulario() {
       throw Exception('Error al obtener los buses: ${ e.message }');
     }
   }
+
+  Future<void> guardarRutaAsignada({
+    required String conductor,
+    required String ruta,
+    required Padre padre,
+    required String hijo,
+    required LatLng destino,
+  }) async {
+    try {
+      /// 1. Traer estudiantes del padre (para obtener dirección del hijo)
+      final estudiantesSnapshot = await FirebaseFirestore.instance
+          .collection("estudiantes")
+          .where("documentoPadre", isEqualTo: padre.documento)
+          .get();
+
+      String? direccionHijo;
+
+      for (var e in estudiantesSnapshot.docs) {
+        if (e["nombreEstudiante"] == hijo) {
+          direccionHijo = e["direccion"];
+          break;
+        }
+      }
+
+      /// Si el hijo no tiene dirección, usar la del padre
+      direccionHijo ??= padre.direccion;
+
+      /// 2. Crear documento de ruta
+      await FirebaseFirestore.instance.collection("rutasAsignadas").add({
+        "conductor": conductor,
+        "bus": ruta,
+
+        "padreNombre": padre.nombre,
+        "padreDocumento": padre.documento,
+        "padreDireccion": padre.direccion,
+
+        "estudianteNombre": hijo,
+        "estudianteDireccion": direccionHijo,
+
+        "destino": {
+          "lat": destino.latitude,
+          "lng": destino.longitude,
+        },
+
+        "fechaCreacion": FieldValue.serverTimestamp(),
+      });
+
+    } catch (e) {
+      print("❌ Error guardando ruta asignada: $e");
+      rethrow;
+    }
+  }
+  Future<void> guardarRutaGenerada({
+  required String placaBus,
+  required List<Estudiante> estudiantes,
+}) async {
+  final firestore = FirebaseFirestore.instance;
+
+  List<Map<String, dynamic>> listaEstudiantes = estudiantes.map((e) {
+    return {
+      "nombre": e.nombreEstudiante,
+      "documento": e.documento,
+      "direccion": e.direccion,
+    };
+  }).toList();
+
+  await firestore.collection("RutasGeneradas").doc(placaBus).set({
+    "placa": placaBus,
+    "estudiantes": listaEstudiantes,
+    "fechaCreacion": DateTime.now(),
+  });
+}
 }

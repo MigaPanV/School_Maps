@@ -6,8 +6,9 @@ class Padre{
   final String correo;
   final String rol;
   final String direccion;
-  final List<int> documentoHijo;
+  List<int> documentoHijo;
   final String placaRutaAsignada;
+  final String uId;
   
   Padre({
 
@@ -16,8 +17,9 @@ class Padre{
     required this.correo,
     this.rol = 'Acudiente',
     required this.direccion,
-    required this.documentoHijo,
-    required this.placaRutaAsignada
+    List<int>? documentoHijo,
+    this.placaRutaAsignada = '',
+    required this.uId
     
-  });
+  }) : documentoHijo = documentoHijo ?? [];
 }

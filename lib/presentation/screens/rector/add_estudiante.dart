@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:school_maps/domain/entities/padre.dart';
 import 'package:school_maps/presentation/provider/firestore_provider.dart';
 import 'package:school_maps/presentation/screens/auth/loading_screen.dart';
 import 'package:school_maps/presentation/widget/shared/custom_text_fields.dart';
@@ -122,17 +121,17 @@ class AddEstudiante extends StatelessWidget {
 
                                 SizedBox(height: 20),
                                 
-                                Text( 'Bus' ),
+                                // Text( 'Bus' ),
 
-                                SizedBox(height: 20),
+                                // SizedBox(height: 20),
 
-                                CustomTextField(
-                                  errorText: firestore.errorPlaca, 
-                                  labeltext: 'Ingrese placa ruta asignada',
-                                  onChanged: firestore.getPlaca,
-                                ),
+                                // CustomTextField(
+                                //   errorText: firestore.errorPlaca, 
+                                //   labeltext: 'Ingrese placa ruta asignada',
+                                //   onChanged: firestore.getPlaca,
+                                // ),
 
-                                SizedBox(height: 20),
+                                // SizedBox(height: 20),
                             
                                 ElevatedButton(
                                   onPressed: () async{

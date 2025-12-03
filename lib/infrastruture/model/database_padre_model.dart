@@ -3,57 +3,62 @@ import 'package:school_maps/domain/entities/padre.dart';
 
 class DatabasePadreModel{
 
-  final String nombrePadre;
+  final String nombre;
   final int documento;
   final String correo;
   final String rol;
   final String direccion;
-  final List<int> documentoHijo;
+  List<int> documentoHijo;
   final String placaRutaAsignada;
+  final String uId;
   
   DatabasePadreModel({
 
-    required this.nombrePadre,
+    required this.nombre,
     required this.documento,
     required this.correo,
-    this.rol = 'Padre',
+    this.rol = 'Acudiente',
     required this.direccion,
-    required this.documentoHijo,
-    required this.placaRutaAsignada
+    List<int>? documentoHijo,
+    this.placaRutaAsignada = '',
+    required this.uId
     
-  });
+  }) : documentoHijo = documentoHijo ?? [];
 
   factory DatabasePadreModel.fromFirestore( Map<String, dynamic> firestore ) => DatabasePadreModel(
-    nombrePadre: firestore[ 'nombrePadre' ], 
+    nombre: firestore[ 'nombrePadre' ], 
     documento: firestore[ 'documentoPadre' ], 
     correo: firestore[ 'correo' ],
     rol: firestore[ 'rol' ],
     direccion: firestore[ 'direccion' ], 
     documentoHijo: firestore[ 'documentoHijo' ].cast<int>(), 
-    placaRutaAsignada: firestore[ 'placa' ]
+    placaRutaAsignada: firestore[ 'placa' ],
+    uId: firestore[ 'uId' ]
   );
 
   Map<String, dynamic> toFirebase() => {
 
-    'nombrePadre' : nombrePadre,
+    'nombrePadre' : nombre,
     'documentoPadre' : documento,
     'correo' : correo,
     'rol' : rol,
     'direccion' : direccion,
     'documentoHijo' : documentoHijo,
     'placa' : placaRutaAsignada,
+    'uId': uId
 
   };
 
   Padre toPadreEntity() => Padre(
 
-    nombre: nombrePadre, 
+    nombre: nombre, 
     documento: documento, 
     correo: correo,
     rol: rol,
     direccion: direccion, 
     documentoHijo: documentoHijo, 
-    placaRutaAsignada: placaRutaAsignada
+    placaRutaAsignada: placaRutaAsignada,
+    uId: uId
     
   );
 

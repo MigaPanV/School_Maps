@@ -128,28 +128,73 @@ exports.setAdminRole = onCall(async (request) => {
   }
 });
 
-exports.getRoute = onRequest(
+exports.computeRoute = onRequest(
   { cors: true, secrets: [mapsApiKey] },
   async (req, res) => {
     try {
-      const { origin, destination } = req.body;
+      const API_KEY = mapsApiKey.value();
+
+      const body = req.method === "POST" ? req.body : req.query;
+
+      const origin = body.origin;
+      const destination = body.destination;
+      const stops = body.stops || [];
 
       if (!origin || !destination) {
         return res.status(400).json({ error: "Origin and destination required" });
       }
 
-      const API_KEY = mapsApiKey.value(); // ← ESTA ES LA CORRECTA
+      // Construimos los waypoints
+      const intermediates = stops.map((s) => ({
+        location: {
+          latLng: {
+            latitude: s.lat,
+            longitude: s.lng,
+          },
+        },
+      }));
 
-      const url = `https://maps.googleapis.com/maps/api/directions/json?origin=${origin}&destination=${destination}&mode=driving&key=${API_KEY}`;
+      const url =
+        `https://routes.googleapis.com/directions/v2:computeRoutes`;
 
-      const response = await axios.get(url);
+      const response = await axios({
+        method: "POST",
+        url,
+        headers: {
+          "Content-Type": "application/json",
+          "X-Goog-Api-Key": API_KEY,
+          "X-Goog-FieldMask": "routes.polyline.encodedPolyline",
+        },
+        data: {
+          origin: {
+            location: {
+              latLng: {
+                latitude: origin.lat,
+                longitude: origin.lng,
+              },
+            },
+          },
+          destination: {
+            location: {
+              latLng: {
+                latitude: destination.lat,
+                longitude: destination.lng,
+              },
+            },
+          },
+          intermediates: intermediates,
+          travelMode: "DRIVE",
+          optimizeWaypoints: true,
+        },
+      });
 
-      return res.status(200).json(response.data);
+      return res.status(200).json({
+        polyline: response.data.routes[0].polyline.encodedPolyline,
+      });
 
-    } catch (error) {
-      console.error("ERROR DIRECTIONS:", error.message);
-      return res.status(500).json({ error: error.message });
+    } catch (err) {
+      console.error("ROUTE ERROR", err.message);
+      return res.status(500).json({ error: err.message });
     }
   }
 );
-

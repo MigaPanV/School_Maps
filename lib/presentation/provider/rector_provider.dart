@@ -1,11 +1,16 @@
+import 'dart:convert';
+
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_typeahead/flutter_typeahead.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:http/http.dart' as http;
 import 'package:provider/provider.dart';
-import 'package:school_maps/domain/entities/conductor.dart';
+import 'package:school_maps/constants.dart';
 import 'package:school_maps/domain/entities/bus.dart';
-import 'package:school_maps/domain/entities/estudiante.dart';
 import 'package:school_maps/domain/entities/padre.dart';
 import 'package:school_maps/presentation/provider/firestore_provider.dart';
+import 'package:school_maps/presentation/screens/rector/create_route_page.dart';
 
 class RectorProvider with ChangeNotifier {
 
@@ -17,6 +22,8 @@ class RectorProvider with ChangeNotifier {
   String? errorPopup;
 
   List<String> seleccionadas = [];
+
+  final List<Map<String, dynamic>> tempPuntos = [];
 
   void mostrarRutas( BuildContext context, Future<List<Bus>> opcionesFuture, List seleccionadas,) {
   showModalBottomSheet(
@@ -92,23 +99,10 @@ class RectorProvider with ChangeNotifier {
 
   bool validarPuntoRuta() {
     if (puntoRuta.isEmpty) {
-      errorPuntoRuta = 'El punto no puede estar vacío';
+      errorPuntoRuta = 'Ingrese una dirección';
       notifyListeners();
       return false;
     }
-    final regex = RegExp(
-      r'^(Calle|Carrera|Diagonal|Transversal)\s+\d+[A-Za-z]?\s*#\s*\d+[A-Za-z]?-?\d*[A-Za-z]?$',
-      caseSensitive: false,
-    );
-    if (!regex.hasMatch(puntoRuta)) {
-      errorPuntoRuta = 'Formato inválido. Ej: Calle 45 # 20-15';
-      notifyListeners();
-      return false;
-    }
-    puntosRuta.add(puntoRuta);
-    puntoRuta = '';
-    errorPuntoRuta = null;
-    notifyListeners();
     return true;
   }
 
@@ -204,24 +198,72 @@ class RectorProvider with ChangeNotifier {
 //   );
 // }
 
-  void openDialogCreateRoute(BuildContext context) async {
+// Convierte dirección a LatLng usando Geocoding API
+  Future<LatLng?> geocodeAddress(String address) async {
+    final encoded = Uri.encodeComponent(address);
+    final url = Uri.parse(
+      'https://maps.googleapis.com/maps/api/geocode/json?address=$encoded&key=$google_api_key'
+    );
+
+    final resp = await http.get(url);
+    if (resp.statusCode != 200) return null;
+
+    final data = jsonDecode(resp.body);
+    if (data['status'] == 'OK' && data['results'] != null && data['results'].isNotEmpty) {
+      final loc = data['results'][0]['geometry']['location'];
+      return LatLng((loc['lat'] as num).toDouble(), (loc['lng'] as num).toDouble());
+    }
+    return null;
+  }
+
+  // Agrega punto a la lista temporal (se usa cuando el usuario presiona "Agregar punto")
+  Future<bool> agregarPuntoTemporal(String direccion) async {
+    final coords = await geocodeAddress(direccion);
+    if (coords == null) {
+      return false;
+    }
+    tempPuntos.add({
+      'lat': coords.latitude,
+      'lng': coords.longitude,
+      'direccion': direccion,
+      'createdAt': FieldValue.serverTimestamp(),
+    });
+    notifyListeners();
+    return true;
+  }
+
+  // Guarda la ruta en Firestore bajo colección Rutas/{placa}
+  Future<void> saveRuta({
+    required String placa,
+    required String nombreRuta,
+    required String conductor,
+  }) async {
+    final docRef = FirebaseFirestore.instance.collection('Rutas').doc(placa);
+
+    await docRef.set({
+      'nombreRuta': nombreRuta,
+      'conductor': conductor,
+      'puntos': tempPuntos,
+      'updatedAt': FieldValue.serverTimestamp(),
+    }, SetOptions(merge: true));
+
+    // si quieres limpiar la lista temporal:
+    tempPuntos.clear();
+    notifyListeners();
+  }
+
+void openDialogCreateRoute(BuildContext context) async {
   final styleTitle = const TextStyle(
     fontSize: 18,
     fontWeight: FontWeight.bold,
     color: Colors.black,
   );
 
-  final styleText = const TextStyle(
-    fontSize: 17,
-    fontWeight: FontWeight.w500,
-    color: Colors.black,
-  );
-
   final firestore = Provider.of<FirestoreProvider>(context, listen: false);
 
   final listaConductores = await firestore.getConductores();
-  await firestore.getPadres();
   final listaBuses = await firestore.getBuses();
+  await firestore.getPadres();
 
   Padre? padreSeleccionado;
   String? hijoSeleccionado;
@@ -232,6 +274,9 @@ class RectorProvider with ChangeNotifier {
   String? errorHijo;
   String? errorRuta;
   String? errorPopup;
+
+  /// 🔵 Nueva variable: destino final guardado desde CreateRoute
+  LatLng? destinoSeleccionado;
 
   TextEditingController textController = TextEditingController();
 
@@ -249,6 +294,7 @@ class RectorProvider with ChangeNotifier {
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
+
                       // ---------------- CONDUCTOR ----------------
                       Text('Asignar conductor', style: styleTitle),
                       const SizedBox(height: 8),
@@ -271,15 +317,14 @@ class RectorProvider with ChangeNotifier {
 
                       const SizedBox(height: 20),
 
-                      // ---------------- RUTA ----------------
-                      Text('Asignar ruta', style: styleTitle),
+                      // ---------------- BUS / RUTA ----------------
+                      Text('Asignar ruta (bus)', style: styleTitle),
                       const SizedBox(height: 8),
                       DropdownButtonFormField<String>(
                         decoration: const InputDecoration(labelText: 'Selecciona una ruta'),
                         value: rutaSeleccionada,
                         items: listaBuses
-                            .map((p) =>
-                                DropdownMenuItem(value: p.placa, child: Text(p.placa)))
+                            .map((p) => DropdownMenuItem(value: p.placa, child: Text(p.placa)))
                             .toList(),
                         onChanged: (value) {
                           setState(() {
@@ -297,17 +342,53 @@ class RectorProvider with ChangeNotifier {
 
                       const SizedBox(height: 20),
 
+                      // ---------------- NUEVA SECCIÓN: DESTINO ----------------
+                      Text("Destino de la Ruta", style: styleTitle),
+
+                      const SizedBox(height: 10),
+
+                      ElevatedButton.icon(
+                        icon: Icon(Icons.map),
+                        label: Text("Elegir destino en mapa"),
+                        onPressed: () async {
+                          /// 🔵 Abrir pantalla CreateRoute (la crearé en el siguiente paso)
+                          final resultado = await Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => CreateRoutePage(),
+                            ),
+                          );
+
+                          if (resultado != null && resultado is LatLng) {
+                            setState(() {
+                              destinoSeleccionado = resultado;
+                            });
+                          }
+                        },
+                      ),
+
+                      const SizedBox(height: 10),
+
+                      if (destinoSeleccionado != null)
+                        Text(
+                          "Destino seleccionado:\nLat: ${destinoSeleccionado!.latitude}\nLng: ${destinoSeleccionado!.longitude}",
+                          textAlign: TextAlign.center,
+                          style: const TextStyle(color: Colors.green, fontSize: 16),
+                        ),
+
+                      const SizedBox(height: 20),
+
                       // ---------------- PADRE ----------------
                       Text('Asignar padre', style: styleTitle),
                       const SizedBox(height: 12),
+
                       TypeAheadField<Padre>(
                         suggestionsCallback: (pattern) async {
                           if (pattern.isEmpty) return [];
                           final padres = await firestore.getPadres();
-                          return padres
-                              .where((p) =>
-                                  p.nombre.toLowerCase().contains(pattern.toLowerCase()))
-                              .toList();
+                          return padres.where((p) => p.nombre
+                              .toLowerCase()
+                              .contains(pattern.toLowerCase())).toList();
                         },
                         itemBuilder: (context, padre) => ListTile(
                           leading: const Icon(Icons.person),
@@ -384,17 +465,10 @@ class RectorProvider with ChangeNotifier {
                         ),
 
                       const SizedBox(height: 20),
-
-                      if (errorPopup != null)
-                        Text(
-                          errorPopup!,
-                          style: const TextStyle(color: Colors.red),
-                        ),
                     ],
                   ),
                 ),
 
-                // ---------------- BOTONES ----------------
                 actions: [
                   TextButton(
                     onPressed: () => Navigator.pop(context),
@@ -402,7 +476,7 @@ class RectorProvider with ChangeNotifier {
                   ),
                   ElevatedButton(
                     child: const Text('Guardar'),
-                    onPressed: () {
+                    onPressed: () async {
                       setState(() {
                         errorPadre = null;
                         errorRuta = null;
@@ -410,31 +484,32 @@ class RectorProvider with ChangeNotifier {
                         errorPopup = null;
                       });
 
-                      if (conductorSeleccionado == null) {
-                        errorPopup = 'Seleccione un conductor';
-                      }
-                      if (rutaSeleccionada == null) {
-                        errorRuta = 'Seleccione una ruta';
-                      }
-                      if (padreSeleccionado == null) {
-                        errorPadre = 'Seleccione un padre';
-                      }
-                      if (padreSeleccionado != null && hijoSeleccionado == null) {
-                        errorHijo = 'Seleccione un hijo';
-                      }
+                      if (conductorSeleccionado == null) errorPopup = "Seleccione un conductor";
+                      if (rutaSeleccionada == null) errorRuta = "Seleccione una ruta";
+                      if (padreSeleccionado == null) errorPadre = "Seleccione un padre";
+                      if (padreSeleccionado != null && hijoSeleccionado == null)
+                        errorHijo = "Seleccione un hijo";
+                      if (destinoSeleccionado == null)
+                        errorPopup = "Debe seleccionar un destino en el mapa";
 
-                      if (errorPopup != null ||
-                          errorRuta != null ||
-                          errorPadre != null ||
-                          errorHijo != null) {
+                      if (errorPopup != null || errorRuta != null || errorPadre != null || errorHijo != null) {
                         setState(() {});
                         return;
                       }
 
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                            content: Text('¡Estudiante asignado correctamente!')),
+                      /// 🔵 GUARDAR EN FIRESTORE LA NUEVA RUTA
+                      await firestore.guardarRutaAsignada(
+                        conductor: conductorSeleccionado!,
+                        ruta: rutaSeleccionada!,
+                        padre: padreSeleccionado!,
+                        hijo: hijoSeleccionado!,
+                        destino: destinoSeleccionado!,
                       );
+
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('¡Ruta asignada correctamente!')),
+                      );
+
                       Navigator.pop(context);
                     },
                   ),
@@ -446,4 +521,5 @@ class RectorProvider with ChangeNotifier {
       );
     },
   );
-}}
+}
+}  

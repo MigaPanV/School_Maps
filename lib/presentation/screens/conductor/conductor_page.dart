@@ -1,6 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
-import 'package:school_maps/presentation/provider/auth_provider.dart';
 import 'package:school_maps/presentation/screens/conductor/conductor_est.dart';
 import 'package:school_maps/presentation/screens/conductor/conductor_finRuta.dart';
 import 'package:school_maps/presentation/screens/maps/route_tracking_page.dart';
@@ -134,7 +132,7 @@ class _CondScreenState extends State<CondScreen> {
 
   @override
   Widget build(BuildContext context) {
-    AuthProvider authProvider = context.watch<AuthProvider>();
+    // AuthProvider authProvider = context.watch<AuthProvider>();
 
     return SafeArea(
       child: Scaffold(

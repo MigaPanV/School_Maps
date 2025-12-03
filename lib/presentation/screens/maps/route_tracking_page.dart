@@ -6,7 +6,6 @@ import 'package:flutter/services.dart';
 import 'package:flutter_polyline_points/flutter_polyline_points.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:permission_handler/permission_handler.dart';
-import 'package:school_maps/constants.dart';
 import 'package:location/location.dart';
 import 'package:http/http.dart' as http;
 
@@ -29,6 +28,8 @@ class _RouteTrackingPageState extends State<RouteTrackingPage> {
   List<LatLng> polylineCoordinates = [];
   Set<Polyline> polylines = {};
 
+  List<LatLng> listaDeParadas = [];
+
   StreamSubscription<LocationData>? _locationSubscription;
 
   BitmapDescriptor sourceIcon = BitmapDescriptor.defaultMarker;
@@ -41,7 +42,7 @@ class _RouteTrackingPageState extends State<RouteTrackingPage> {
     pedirPermisos();
     setCustomMarkerIcon();
     getCurrentLocation();
-    getPolyPoints();
+    getPolyPoints(listaDeParadas);
   }
 
   @override
@@ -109,33 +110,39 @@ class _RouteTrackingPageState extends State<RouteTrackingPage> {
   //  POLILÍNEAS
   // ----------------------------
 
-  void getPolyPoints() async {
+  Future<void> getPolyPoints(List<LatLng> stops) async {
     try {
       final url = Uri.parse(
-        "https://us-central1-school-maps-e69f3.cloudfunctions.net/getRoute",
+        "https://us-central1-school-maps-e69f3.cloudfunctions.net/computeRoute",
       );
 
       final response = await http.post(
         url,
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: {"Content-Type": "application/json"},
         body: jsonEncode({
-          "origin": "${sourceLocation.latitude},${sourceLocation.longitude}",
-          "destination": "${destination.latitude},${destination.longitude}",
+          "origin": {
+            "lat": currentLocation!.latitude!,
+            "lng": currentLocation!.longitude!,
+          },
+          "destination": {
+            "lat": destination.latitude,
+            "lng": destination.longitude,
+          },
+          "stops": stops
+              .map((s) => {"lat": s.latitude, "lng": s.longitude})
+              .toList(),
         }),
       );
 
       final data = json.decode(response.body);
 
-      if (data["routes"] == null || data["routes"].isEmpty) {
-        print("⚠ GOOGLE NO DEVOLVIÓ RUTAS");
+      if (!data.containsKey("polyline")) {
+        print("⚠ No se recibió polyline");
         return;
       }
-      
-      final points = data["routes"][0]["overview_polyline"]["points"];
 
-      List<PointLatLng> decoded = PolylinePoints.decodePolyline(points);
+      List<PointLatLng> decoded =
+          PolylinePoints.decodePolyline(data["polyline"]);
 
       polylineCoordinates =
           decoded.map((p) => LatLng(p.latitude, p.longitude)).toList();
@@ -150,6 +157,7 @@ class _RouteTrackingPageState extends State<RouteTrackingPage> {
       };
 
       setState(() {});
+
     } catch (e) {
       print("ERROR AL OBTENER RUTA: $e");
     }

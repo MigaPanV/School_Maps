@@ -1,124 +1,159 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:school_maps/presentation/provider/rector_provider.dart';
+import 'package:school_maps/presentation/provider/firestore_provider.dart';
+import 'package:school_maps/domain/entities/estudiante.dart';
 
-class CrearRuta extends StatelessWidget {
+class CrearRuta extends StatefulWidget {
   const CrearRuta({super.key});
 
   @override
+  State<CrearRuta> createState() => _CrearRutaState();
+}
+
+class _CrearRutaState extends State<CrearRuta> {
+  List<Estudiante> estudiantes = [];
+  List<Estudiante> seleccionados = [];
+  String? busSeleccionado;
+
+  bool loading = true;
+  bool guardando = false;
+
+  @override
+  void initState() {
+    super.initState();
+    cargarDatos();
+  }
+
+  Future<void> cargarDatos() async {
+    final firestore = Provider.of<FirestoreProvider>(context, listen: false);
+
+    final listaEstudiantes = await firestore.getEstudiantesAll();  
+    final listaBuses = await firestore.getBuses();                 
+
+    setState(() {
+      estudiantes = listaEstudiantes;
+      buses = listaBuses.map((b) => b.placa).toList();
+      loading = false;
+    });
+  }
+
+  List<String> buses = [];
+
+  Future<void> guardarRuta() async {
+    if (busSeleccionado == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Selecciona un bus.")),
+      );
+      return;
+    }
+
+    if (seleccionados.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Selecciona al menos un estudiante.")),
+      );
+      return;
+    }
+
+    final firestore = Provider.of<FirestoreProvider>(context, listen: false);
+
+    setState(() => guardando = true);
+
+    await firestore.guardarRutaGenerada(
+      placaBus: busSeleccionado!,
+      estudiantes: seleccionados,
+    );
+
+    setState(() => guardando = false);
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text("Ruta creada correctamente.")),
+    );
+
+    Navigator.pop(context);
+  }
+
+  @override
   Widget build(BuildContext context) {
-
-    final rectorProvider = context.watch<RectorProvider>();
-
-    const double maxContentWidth = 800;
-    const double maxFieldWidth = 500;
-
-    return SafeArea(
-      child: Scaffold(
-        resizeToAvoidBottomInset: true,
-        appBar: AppBar(
-          title: const Text('Crear Ruta'),
-        ),
-        body: LayoutBuilder(
-          builder: (context, constraints) {
-            return SingleChildScrollView(
-              child: ConstrainedBox(
-                constraints: BoxConstraints(
-                  minHeight: constraints.maxHeight,
-                ),
-                child: Align(
-                  alignment: Alignment.topCenter,
-                  child: ConstrainedBox(
-                    constraints: const BoxConstraints(maxWidth: maxContentWidth),
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 20),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.center,
-                        children: [
-                          ConstrainedBox(
-                            constraints: const BoxConstraints(
-                              maxHeight: 500,
-                              minHeight: 200,
-                            ),
-                            child: const Padding(
-                              padding: EdgeInsets.all(8.0),
-                              child: Placeholder(),
-                            ),
-                          ),
-
-                          const SizedBox(height: 24),
-
-                          const Text(
-                            'Puntos de ruta',
-                            style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
-                          ),
-
-                          const SizedBox(height: 12),
-
-                          ConstrainedBox(
-                            constraints: const BoxConstraints(maxWidth: maxFieldWidth),
-                            child: Padding(
-                              padding: const EdgeInsets.symmetric(vertical: 8.0),
-                              child: TextField(
-                                onChanged: (value) => rectorProvider.setPuntoRuta(value),
-                                decoration: InputDecoration(
-                                  hintText: 'Ingresar un punto de ruta',
-                                  filled: true,
-                                  fillColor: Colors.white,
-                                  errorText: rectorProvider.errorPuntoRuta,
-                                  contentPadding: const EdgeInsets.symmetric(
-                                    horizontal: 16,
-                                    vertical: 14,
-                                  ),
-                                  enabledBorder: OutlineInputBorder(
-                                    borderSide: BorderSide(color: Colors.white),
-                                    borderRadius: BorderRadius.all(Radius.circular(12)),
-                                  ),
-                                  focusedBorder: OutlineInputBorder(
-                                    borderSide: BorderSide(color: Colors.blueAccent),
-                                    borderRadius: BorderRadius.all(Radius.circular(12)),
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ),
-
-                          const SizedBox(height: 12),
-
-                          Wrap(
-                            spacing: 12,
-                            runSpacing: 8,
-                            alignment: WrapAlignment.center,
-                            children: [
-                              ElevatedButton(
-                                onPressed: () {
-                                  if (rectorProvider.validarPuntoRuta()) {
-                                    // Aquí agregas el punto a Firestore o a una lista temporal
-                                    print("Punto válido: ${rectorProvider.puntoRuta}");
-                                  }
-                                },
-                                child: const Text('Agregar punto'),
-                              ),
-                              ElevatedButton(
-                                onPressed: () {
-                                  rectorProvider.openDialogCreateRoute(context);
-                                },
-                                child: const Text('Guardar ruta'),
-                              ),
-                            ],
-                          ),
-
-                          const SizedBox(height: 80), // margen final
-                        ],
-                      ),
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text("Crear Ruta Escolar"),
+      ),
+      body: loading
+          ? const Center(child: CircularProgressIndicator())
+          : Column(
+              children: [
+                // -------- BUS SELECCIONADO --------
+                Padding(
+                  padding: const EdgeInsets.all(12.0),
+                  child: DropdownButtonFormField<String>(
+                    value: busSeleccionado,
+                    decoration: const InputDecoration(
+                      labelText: "Seleccionar bus",
+                      labelStyle: TextStyle(color: Colors.white),
+                      border: OutlineInputBorder(),
                     ),
+                    items: buses
+                        .map((p) => DropdownMenuItem(
+                              value: p,
+                              child: Text(p),
+                            ))
+                        .toList(),
+                    onChanged: (value) {
+                      setState(() {
+                        busSeleccionado = value;
+                      });
+                    },
                   ),
                 ),
-              ),
-            );
-          },
-        ),
-      ),
+
+                const SizedBox(height: 10),
+
+                const Text("Seleccionar estudiantes:",
+                  style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold, color: Colors.white)),
+
+                Expanded(
+                  child: ListView.builder(
+                    itemCount: estudiantes.length,
+                    itemBuilder: (context, index) {
+                      final estudiante = estudiantes[index];
+                      final seleccionado =
+                          seleccionados.contains(estudiante);
+
+                      return CheckboxListTile(
+                        title: Text(estudiante.nombreEstudiante,
+                          style: TextStyle(color: Colors.white)),
+                        subtitle: Text("Documento: ${estudiante.documento}", 
+                          style: TextStyle(color: Colors.white)),
+                        value: seleccionado,
+                        onChanged: (bool? value) {
+                          setState(() {
+                            if (value == true) {
+                              seleccionados.add(estudiante);
+                            } else {
+                              seleccionados.remove(estudiante);
+                            }
+                          });
+                        },
+                      );
+                    },
+                  ),
+                ),
+
+                guardando
+                    ? const Padding(
+                        padding: EdgeInsets.all(12),
+                        child: CircularProgressIndicator(),
+                      )
+                    : Padding(
+                        padding: const EdgeInsets.all(12),
+                        child: ElevatedButton.icon(
+                          icon: const Icon(Icons.save),
+                          label: const Text("Guardar Ruta"),
+                          onPressed: guardarRuta,
+                        ),
+                      ),
+              ],
+            ),
     );
   }
 }

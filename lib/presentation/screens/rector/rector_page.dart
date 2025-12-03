@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:school_maps/domain/entities/bus.dart';
 import 'package:school_maps/presentation/provider/auth_provider.dart';
 import 'package:school_maps/presentation/provider/rector_provider.dart';
 import 'package:school_maps/presentation/screens/maps/route_tracking_page.dart';
@@ -29,8 +28,6 @@ class RectorScreen extends StatelessWidget {
     final texto = seleccionadas.isEmpty
       ? 'Selecciona una ruta'
       : seleccionadas.join(', ');
-
-    const double maxContentWidth = 800;
     
     return SafeArea(
       child: Scaffold(
