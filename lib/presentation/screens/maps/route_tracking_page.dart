@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:ui' as ui;
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_polyline_points/flutter_polyline_points.dart';
@@ -27,6 +28,8 @@ class _RouteTrackingPageState extends State<RouteTrackingPage> {
   LocationData? currentLocation;
   List<LatLng> polylineCoordinates = [];
   Set<Polyline> polylines = {};
+  Set<Marker> markers = {};
+
 
   List<LatLng> listaDeParadas = [];
 
@@ -40,24 +43,44 @@ class _RouteTrackingPageState extends State<RouteTrackingPage> {
   void initState() {
     super.initState();
     pedirPermisos();
-    setCustomMarkerIcon();
-    getCurrentLocation();
-    getPolyPoints(listaDeParadas);
+    // setCustomMarkerIcon();
+    iniciarTodo();
   }
 
   @override
   void dispose() {
     _locationSubscription?.cancel();
-
-    if (_mapController != null) {
-      // SOLO Android/iOS pueden llamar dispose
-      // En Web causa error
-      try {
-        _mapController!.dispose();
-      } catch (_) {}
-    }
-
     super.dispose();
+  }
+
+  Future<void> iniciarTodo() async {
+    await getCurrentLocation();     // ⬅ Espera ubicación
+    await cargarParadasDesdeFirestore(); // ⬅ Ahora sí calcula ruta
+  }
+
+  Future<void> cargarParadasDesdeFirestore() async {
+    
+    final snapshot = await FirebaseFirestore.instance.collection("Estudiantes").get();
+
+    listaDeParadas = snapshot.docs.map((d) {
+      return LatLng(d["lat"], d["lng"]);
+    }).toList();
+
+    print("Paradas cargadas: ${listaDeParadas.length}");
+
+    for (int i = 0; i < listaDeParadas.length; i++) {
+      markers.add(
+        Marker(
+          markerId: MarkerId("parada_$i"),
+          position: listaDeParadas[i],
+          icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueAzure),
+          infoWindow: InfoWindow(title: "Parada ${i + 1}"),
+        ),
+      );
+    }
+    setState(() {});
+
+    await getPolyPoints(listaDeParadas);
   }
 
 
@@ -65,34 +88,40 @@ class _RouteTrackingPageState extends State<RouteTrackingPage> {
   //  UBICACIÓN EN TIEMPO REAL
   // ----------------------------
 
-  void getCurrentLocation() async {
+  Future<void> getCurrentLocation() async {
 
     Location location = Location();
     currentLocation = await location.getLocation();
 
-    // ESCUCHAR UBICACIÓN
-    _locationSubscription = location.onLocationChanged.listen((newLoc) async {
+    setState(() {}); // actualiza UI
 
+    _locationSubscription = location.onLocationChanged.listen((newLoc) async {
       if (!mounted) return;
 
       currentLocation = newLoc;
       setState(() {});
 
-      // Solo mover cámara si el mapa está creado y montado
       if (_mapController != null) {
         _mapController!.animateCamera(
           CameraUpdate.newCameraPosition(
             CameraPosition(
               zoom: 14.5,
-              target: LatLng(
-                newLoc.latitude!,
-                newLoc.longitude!,
-              ),
+              target: LatLng(newLoc.latitude!, newLoc.longitude!),
             ),
           ),
         );
       }
     });
+
+    markers.add( Marker(
+      markerId: MarkerId('currentLocation'),
+      position: LatLng(
+        currentLocation!.latitude!,
+        currentLocation!.longitude!,
+      ),
+      icon: currentLocationIcon,
+      ), 
+    );
   }
 
   // ----------------------------
@@ -111,6 +140,8 @@ class _RouteTrackingPageState extends State<RouteTrackingPage> {
   // ----------------------------
 
   Future<void> getPolyPoints(List<LatLng> stops) async {
+    if (currentLocation == null) return; // evita null
+
     try {
       final url = Uri.parse(
         "https://us-central1-school-maps-e69f3.cloudfunctions.net/computeRoute",
@@ -176,16 +207,16 @@ class _RouteTrackingPageState extends State<RouteTrackingPage> {
     final frame = await codec.getNextFrame();
     final bytes = await frame.image.toByteData(format: ui.ImageByteFormat.png);
 
-    return BitmapDescriptor.fromBytes(bytes!.buffer.asUint8List());
+    return BitmapDescriptor.bytes(bytes!.buffer.asUint8List());
   } 
 
-  void setCustomMarkerIcon() async {
-    sourceIcon = await getResizedMarker('assets/images/login.jpg', 90);
-    destinationIcon = await getResizedMarker('assets/images/login.jpg', 90);
-    currentLocationIcon = await getResizedMarker('assets/images/login.jpg', 70);
+  // void setCustomMarkerIcon() async {
+  //   sourceIcon = await getResizedMarker('assets/images/login.jpg', 90);
+  //   destinationIcon = await getResizedMarker('assets/images/login.jpg', 90);
+  //   currentLocationIcon = await getResizedMarker('assets/images/login.jpg', 70);
 
-    setState(() {});
-  }
+  //   setState(() {});
+  // }
 
   // ----------------------------
   //  UI DE MAPA
@@ -205,26 +236,27 @@ class _RouteTrackingPageState extends State<RouteTrackingPage> {
                 zoom: 14.5,
               ),
               polylines: polylines,
-              markers: {
-                Marker(
-                  markerId: MarkerId('currentLocation'),
-                  icon: currentLocationIcon,
-                  position: LatLng(
-                    currentLocation!.latitude!,
-                    currentLocation!.longitude!,
-                  ),
-                ),
-                Marker(
-                  markerId: MarkerId('source'),
-                  icon: sourceIcon,
-                  position: sourceLocation,
-                ),
-                Marker(
-                  markerId: MarkerId('destination'),
-                  icon: destinationIcon,
-                  position: destination,
-                ),
-              },
+              markers: markers,
+              // {
+              //   Marker(
+              //     markerId: MarkerId('currentLocation'),
+              //     icon: currentLocationIcon,
+              //     position: LatLng(
+              //       currentLocation!.latitude!,
+              //       currentLocation!.longitude!,
+              //     ),
+              //   ),
+              //   Marker(
+              //     markerId: MarkerId('source'),
+              //     icon: sourceIcon,
+              //     position: sourceLocation,
+              //   ),
+              //   Marker(
+              //     markerId: MarkerId('destination'),
+              //     icon: destinationIcon,
+              //     position: destination,
+              //   ),
+              // },
               onMapCreated: (controller) {
                 _mapController = controller;
               },

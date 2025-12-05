@@ -1,7 +1,11 @@
+import 'dart:convert';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:http/http.dart' as http;
+import 'package:school_maps/constants.dart';
 import 'package:school_maps/domain/entities/bus.dart';
 import 'package:school_maps/domain/entities/conductor.dart';
 import 'package:school_maps/domain/entities/estudiante.dart';
@@ -40,6 +44,7 @@ class FirestoreProvider extends ChangeNotifier {
 
   String nombreEstudiante = '';
   int documentoEstudiante = 0;
+  int? grado = 0;
 
   // * Variables Bus
   
@@ -58,6 +63,7 @@ class FirestoreProvider extends ChangeNotifier {
   String? errorDocumentoHijo;
   String? errorPlaca;
   String? errorGeneral;
+  String? errorGrado;
   String? errorNombreConductor;
   String? errorDocumentoConductor;
   String? errorCorreoConductor;
@@ -171,6 +177,11 @@ class FirestoreProvider extends ChangeNotifier {
   notifyListeners();
 }
 
+  void getGrado( value ){
+    grado = value!;
+    notifyListeners();
+  }
+
   // * Funciones Getter Bus
 
   void getPlaca(String value) {
@@ -272,6 +283,10 @@ class FirestoreProvider extends ChangeNotifier {
     errorDireccion = "Campo requerido";
     valid = false;
   }
+  if ( grado == 0 ) {
+    errorGrado = "Campo requerido";
+    valid = false;
+  }
 
   // if (placaRutaAsignada.isEmpty) {
   //   errorPlaca = "Campo requerido";
@@ -287,12 +302,14 @@ void resetEstudianteFormulario() {
   documentoEstudiante = 0;
   direccion = "";
   placaRutaAsignada = "";
+  grado == 0;
 
   errorNombre = null;
   errorDocumento = null;
   errorDireccion = null;
   errorPlaca = null;
   errorGeneral = null;
+  errorGrado == null;
 
   isUploaded = false;
   isLoading = false;
@@ -432,8 +449,8 @@ void resetConductorFormulario() {
         uId: result.data[ 'uid' ],
         documentoHijo: documentoHijo,
         // placaRutaAsignada: placaRutaAsignada,
-      );
-      }
+        );
+     }
 
       await firestore.collection( 'Acudientes' ).doc( result.data[ 'uid' ] ).set( {
         ...padre.toFirebase(),
@@ -466,11 +483,23 @@ void resetConductorFormulario() {
       errorGeneral = null;
       notifyListeners();
 
+      LatLng? coords = await geocodeAddress(direccion);
+
+        if (coords == null) {
+        errorGeneral = "No se pudo encontrar la dirección.";
+        isLoading = false;
+        notifyListeners();
+        return;
+      }
+
       final padres = await getPadres();
 
       final estudiante = DatabaseEstudianteModel(
         nombreEstudiante: nombreEstudiante,
         documento: documentoEstudiante,
+        grado: grado!,
+        lat: coords.latitude,
+        lng: coords.longitude,
         cedulaAcudiente: documentoPadre,
         // placaRutaAsignada: placaRutaAsignada,
         direccion: direccion
@@ -692,15 +721,23 @@ void resetConductorFormulario() {
         .toList();
   }
 
-  Future<List<Estudiante>> getEstudiantesAll() async{
+  Future<Map< String, List<Estudiante>>> getEstudiantesAll() async{
     try{
-      final snapshot = await FirebaseFirestore.instance
-      .collection('Estudiantes')
-      .get();
+      final sinRutaSnap = await firestore.collection( 'Estudiantes' ).where( 'placa', isEqualTo: '' ).orderBy( 'grado' ).get();
+      final conRutaSnap = await firestore.collection( 'Estudiantes' ).where( 'placa', isGreaterThan: '' ).orderBy( 'grado' ).get();
 
-      return snapshot.docs
+      final sinRutaEstudiantes = sinRutaSnap.docs
           .map((doc) => DatabaseEstudianteModel.fromFirestore(doc.data()).toEstudianteEntity())
           .toList();
+      final conRutaEstudiantes = conRutaSnap.docs
+          .map((doc) => DatabaseEstudianteModel.fromFirestore(doc.data()).toEstudianteEntity())
+          .toList();
+
+      return {
+        'sinRuta' : sinRutaEstudiantes,
+        'conRuta' : conRutaEstudiantes,
+      };
+
     }on FirebaseException catch ( e ){
       throw Exception('Error al obtener los estudiantes: ${ e.message }');
     }
@@ -772,23 +809,98 @@ void resetConductorFormulario() {
     }
   }
   Future<void> guardarRutaGenerada({
-  required String placaBus,
-  required List<Estudiante> estudiantes,
-}) async {
-  final firestore = FirebaseFirestore.instance;
+    required String placaBus,
+    required int capacidadBus,
+    required List<Estudiante> estudiantes,
+  }) async {
 
-  List<Map<String, dynamic>> listaEstudiantes = estudiantes.map((e) {
-    return {
-      "nombre": e.nombreEstudiante,
-      "documento": e.documento,
-      "direccion": e.direccion,
-    };
-  }).toList();
+    final rutaDoc = await firestore.collection("RutasGeneradas").doc(placaBus).get();
 
-  await firestore.collection("RutasGeneradas").doc(placaBus).set({
-    "placa": placaBus,
-    "estudiantes": listaEstudiantes,
-    "fechaCreacion": DateTime.now(),
-  });
-}
+    int cantidadActual = 0;
+
+    if (rutaDoc.exists) {
+      final data = rutaDoc.data()!;
+      final listaActual = (data['estudiantes'] as List?) ?? [];
+      cantidadActual = listaActual.length;
+    }
+
+    final cantidadNueva = estudiantes.length;
+    final total = cantidadActual + cantidadNueva;
+
+    if (total > capacidadBus) {
+      throw Exception(
+        "La ruta ya tiene $cantidadActual estudiantes. "
+        "No puedes agregar $cantidadNueva más porque superan la capacidad del bus ($capacidadBus)."
+      );
+    }
+
+    /// --- 2. Preparar estudiantes nuevos a agregar ---
+    List<Map<String, dynamic>> estudiantesParaAgregar = estudiantes.map((e) {
+      return {
+        "nombre": e.nombreEstudiante,
+        "documento": e.documento,
+        "direccion": e.direccion,
+        "cedulaAcudiente": e.cedulaAcudiente,
+      };
+    }).toList();
+
+
+    /// --- 3. Crear o actualizar la ruta CONTINUANDO la lista ---
+    if (!rutaDoc.exists) {
+      /// Si la ruta NO existe → la creamos
+      await firestore.collection("RutasGeneradas").doc(placaBus).set({
+        "placa": placaBus,
+        "fechaCreacion": DateTime.now(),
+        "estudiantes": estudiantesParaAgregar,
+      });
+    } else {
+      /// Si la ruta ya existe → agregamos SIN sobrescribir
+      await firestore.collection("RutasGeneradas").doc(placaBus).update({
+        "estudiantes": FieldValue.arrayUnion(estudiantesParaAgregar),
+      });
+    }
+
+
+    /// ASIGNAR PLACA A CADA ESTUDIANTE Y ACUDIENTE
+    for (final est in estudiantes) {
+      final estudianteRef = firestore.collection("Estudiantes").doc(est.documento.toString());
+      final acudienteQuery = await firestore
+          .collection("Acudientes")
+          .where('documentoPadre', isEqualTo: est.cedulaAcudiente)
+          .limit(1)
+          .get();
+
+      /// ACTUALIZAR ESTUDIANTE
+      await estudianteRef.update({
+        'placa': placaBus,
+      });
+
+      /// ACTUALIZAR ACUDIENTE (SI EXISTE)
+      if (acudienteQuery.docs.isNotEmpty) {
+        await acudienteQuery.docs.first.reference.update({
+          'placa': placaBus,
+        });
+      }
+    }
+  }
+
+  Future<LatLng?> geocodeAddress(String address) async {
+    final apiKey = google_api_key;
+    final encoded = Uri.encodeQueryComponent(address);
+    final url = Uri.parse(
+      "https://maps.googleapis.com/maps/api/geocode/json?address=$encoded&key=$apiKey"
+    );
+
+    final response = await http.get(url);
+
+    if (response.statusCode != 200) return null;
+
+    final data = jsonDecode(response.body);
+
+    if (data["status"] != "OK") return null;
+
+    final location = data["results"][0]["geometry"]["location"];
+
+    return LatLng(location["lat"], location["lng"]);
+  }
 }

@@ -14,6 +14,9 @@ class AddEstudiante extends StatelessWidget {
 
     const double maxContentWidth = 800;
 
+    int? gradoSeleccionado = 0;
+    List<int> grados = [ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11 ];
+
     if(!firestore.isLoading && firestore.isUploaded){
       return SafeArea(
         child: Scaffold(
@@ -98,6 +101,24 @@ class AddEstudiante extends StatelessWidget {
                                   labeltext: 'Ingrese documento estudiante',
                                   onChanged: firestore.getDocumentoEstudiante,
                                 ),
+
+                                DropdownButtonFormField<int>(
+                                  decoration: const InputDecoration(labelText: 'Selecciona un grado'),
+                                  initialValue: gradoSeleccionado,
+                                  items: grados
+                                      .map((c) => DropdownMenuItem(
+                                            value: c,
+                                            child: Text( c.toString() ),
+                                          ))
+                                      .toList(),
+                                  onChanged: (value) {
+                                    firestore.getGrado( value );
+                                    //(() {
+                                    //   gradoSeleccionado = value;
+                                    //   // errorPopup = null;
+                                    // });
+                                  },
+                                ),          
 
                                 SizedBox(height: 20),
 
