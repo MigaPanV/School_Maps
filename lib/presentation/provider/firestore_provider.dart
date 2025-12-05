@@ -65,7 +65,22 @@ class FirestoreProvider extends ChangeNotifier {
   String? errorPlacaConductor;
 
 
-  // * Funciones Getter padre
+  void limpiarErrores() {
+  errorNombre = null;
+  errorDocumento = null;
+  errorCorreo = null;
+  errorDireccion = null;
+  errorDocumentoHijo = null;
+  errorPlaca = null;
+  errorGeneral = null;
+  errorNombreConductor = null;
+  errorDocumentoConductor = null;
+  errorCorreoConductor = null;
+  errorFechaLicencia = null;
+  errorPlacaConductor = null;
+
+  notifyListeners();
+}
 
   void getNombreAcudiente( String value ) {
     nombrePadre = value.trim();
@@ -73,11 +88,17 @@ class FirestoreProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  void getDocumentoAcudiente( String value ) {
-    documentoPadre = int.parse( value.trim() );
+  void getDocumentoAcudiente(String value) {
+  final parsed = int.tryParse(value.trim());
+  if (parsed == null) {
+    documentoPadre = 0;
+    errorDocumento = "Documento inválido";
+  } else {
+    documentoPadre = parsed;
     errorDocumento = null;
-    notifyListeners();
   }
+  notifyListeners();
+}
 
   void getCorreoAcudiente( String value ){
     correo = value;
@@ -108,10 +129,16 @@ class FirestoreProvider extends ChangeNotifier {
   }
 
   void getDocumentoConductor(String value) {
-    documentoConductor = int.parse( value.trim() );
+  final parsed = int.tryParse(value.trim());
+  if (parsed == null) {
+    documentoConductor = 0;
+    errorDocumentoConductor = "Documento inválido";
+  } else {
+    documentoConductor = parsed;
     errorDocumentoConductor = null;
-    notifyListeners();
   }
+  notifyListeners();
+}
 
   void getCorreoConductor(String value) {
     correoConductor = value.trim();
@@ -132,10 +159,17 @@ class FirestoreProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  void getDocumentoEstudiante( String value ){
-    documentoEstudiante = int.parse( value.trim() );
-    notifyListeners();
+  void getDocumentoEstudiante(String value) {
+  final parsed = int.tryParse(value.trim());
+  if (parsed == null) {
+    documentoEstudiante = 0;
+    errorDocumentoHijo = "Documento inválido";
+  } else {
+    documentoEstudiante = parsed;
+    errorDocumentoHijo = null;
   }
+  notifyListeners();
+}
 
   // * Funciones Getter Bus
 
@@ -160,20 +194,34 @@ class FirestoreProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  void getCapacidad( String value ){
-    capacidad = int.parse( value. trim() );
-    notifyListeners();
+  void getCapacidad(String value) {
+  final parsed = int.tryParse(value.trim());
+  if (parsed == null) {
+    capacidad = 0;
+    errorPlaca = "Capacidad inválida";
+  } else {
+    capacidad = parsed;
+    errorPlaca = null;
   }
+  notifyListeners();
+}
 
   void getExtintorVencimiento( String value ){
     extintorVencimiento = value.trim();
     notifyListeners();
   }
 
-  void getkmRecorridos( String value ){
-    kmRecorridos = int.parse( value. trim() );
-    notifyListeners();
+  void getkmRecorridos(String value) {
+  final parsed = int.tryParse(value.trim());
+  if (parsed == null) {
+    kmRecorridos = 0;
+    errorPlaca = "Km inválidos";
+  } else {
+    kmRecorridos = parsed;
+    errorPlaca = null;
   }
+  notifyListeners();
+}
 
   bool validateForm() {
     bool valid = true;
@@ -454,89 +502,109 @@ void resetConductorFormulario() {
       errorGeneral = "Error inesperado: ${e.toString()}";
     } finally {
       isLoading = false;
+      limpiarErrores();
       notifyListeners();
     }
   }
 
-  Future<void> addConductor() async {
-  if (!validateConductorForm()) return;
+  Future<bool> addConductor() async {
+  if (!validateConductorForm()) return false;
 
-    try{
-      isUploaded = false;
-      isLoading = true;
-      errorGeneral = null;
-      notifyListeners();
+  try {
+    isUploaded = false;
+    isLoading = true;
+    errorGeneral = null;
+    notifyListeners();
 
-      final conductor = DatabaseConductorModel(
-        nombreConductor: nombreConductor, 
-        documento: documentoConductor, 
-        correo: correoConductor, 
-        vencimientoLicencia: fechavencimientoLicencia, 
-        placaRutaAsignada: placaRutaAsignada
-      );
+    final conductor = DatabaseConductorModel(
+      nombreConductor: nombreConductor,
+      documento: documentoConductor,
+      correo: correoConductor,
+      vencimientoLicencia: fechavencimientoLicencia,
+      placaRutaAsignada: placaRutaAsignada,
+    );
 
-      await FirebaseAuth.instance.currentUser?.getIdToken(true);
+    // Refresco token (opcional)
+    await FirebaseAuth.instance.currentUser?.getIdToken(true);
 
-      final callable = FirebaseFunctions.instance.httpsCallable('createDriver');
+    final callable = FirebaseFunctions.instance.httpsCallable('createDriver');
 
-      final result = await callable.call({
-        'correo': correoConductor.trim(),
-        'password': documentoConductor.toString(),
-        'rol': 'Conductor',
-      });
-      await firestore.collection( 'Conductores' ).doc( result.data[ 'uid' ] ).set({
-        ...conductor.toFirestore(),
-        'rol' : 'Conductor'
-      });
+    final result = await callable.call({
+      'correo': correoConductor.trim(),
+      'password': documentoConductor.toString(),
+      'rol': 'Conductor',
+    });
 
-      isUploaded = true;
-      notifyListeners();
+    await firestore.collection('Conductores').doc(result.data['uid']).set({
+      ...conductor.toFirestore(),
+      'rol': 'Conductor'
+    });
 
-    } on FirebaseException catch (e) {
-      errorGeneral = e.message ?? 'Error al guardar en la base de datos.';
-    }finally {
-
-      isLoading = false;
-      notifyListeners();
-      
-    }
+    isUploaded = true;
+    return true;
+  } on FirebaseException catch (e, st) {
+    // Guardar y mostrar error para la UI y logs
+    errorGeneral = e.message ?? 'Error al guardar en la base de datos.';
+    debugPrint('addConductor FirebaseException: ${e.message}');
+    debugPrintStack(stackTrace: st);
+    return false;
+  } catch (e, st) {
+    errorGeneral = 'Error inesperado: ${e.toString()}';
+    debugPrint('addConductor Exception: $e');
+    debugPrintStack(stackTrace: st);
+    return false;
+  } finally {
+    isLoading = false;
+    notifyListeners();
   }
+}
 
 
-  Future<void> addBus() async {
+  Future<bool> addBus() async {
+  try {
+    isLoading = true;
+    isUploaded = false;
+    errorGeneral = null;
+    notifyListeners();
 
-    try{
+    final bus = DatabaseBusModel(
+      placa: placaRutaAsignada,
+      nombreConductor: nombreConductor,
+      tecnoVencimiento: tecnoVencimiento,
+      soatVencimiento: soatVencimiento,
+      monitora: monitora,
+      capacidad: capacidad,
+      extintorVencimiento: extintorVencimiento,
+      kmRecorridos: kmRecorridos,
+    );
 
-      isLoading = true;
-      isUploaded = false;
-      notifyListeners();
-
-      final bus = DatabaseBusModel(
-        placa: placaRutaAsignada, 
-        nombreConductor: nombreConductor, 
-        tecnoVencimiento: tecnoVencimiento, 
-        soatVencimiento: soatVencimiento, 
-        monitora: monitora, 
-        capacidad: capacidad, 
-        extintorVencimiento: extintorVencimiento, 
-        kmRecorridos: kmRecorridos
-      );
-
-      await firestore.collection( 'Buses' ).doc( bus.placa ).set({
-        ...bus.toFirestore()
-      });
-
-      isUploaded = true;
-
-    } on FirebaseException catch (e){
-      errorGeneral = e.message ?? 'Error al guardar en la base de datos.';
-    } finally {
-
-      isLoading = false;
-      notifyListeners();
+    // Validación extra: placa no vacía
+    if (bus.placa.isEmpty) {
+      errorGeneral = 'La placa es requerida para crear el bus.';
+      return false;
     }
 
+    await firestore.collection('Buses').doc(bus.placa).set({
+      ...bus.toFirestore()
+    });
+
+    isUploaded = true;
+    return true;
+  } on FirebaseException catch (e, st) {
+    errorGeneral = e.message ?? 'Error al guardar en la base de datos.';
+    debugPrint('addBus FirebaseException: ${e.message}');
+    debugPrintStack(stackTrace: st);
+    return false;
+  } catch (e, st) {
+    errorGeneral = 'Error inesperado: ${e.toString()}';
+    debugPrint('addBus Exception: $e');
+    debugPrintStack(stackTrace: st);
+    return false;
+  } finally {
+    isLoading = false;
+    notifyListeners();
   }
+}
 
   Future<String?> getUserRole(String uId ) async{
 

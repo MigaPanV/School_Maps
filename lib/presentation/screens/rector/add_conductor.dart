@@ -176,13 +176,27 @@ class AddConductor extends StatelessWidget {
                                 SizedBox(height: 20),
                             
                                 ElevatedButton(
-                                  onPressed: () async{
-                                    
-                                    await firestore.addConductor();
-                                    await firestore.addBus();
-                                    
-                                  }, 
-                                  child: Text( 'Guardar' )
+                                  onPressed: firestore.isLoading ? null : () async {
+                                    // Llamar addConductor y solo si fue exitosa llamar addBus
+                                    final successConductor = await firestore.addConductor();
+
+                                    if (!successConductor) {
+                                      // mostrar error si existe
+                                      final msg = firestore.errorGeneral ?? 'Error guardando conductor';
+                                      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
+                                      return;
+                                    }
+
+                                    final successBus = await firestore.addBus();
+                                    if (!successBus) {
+                                      final msg = firestore.errorGeneral ?? 'Error guardando bus';
+                                      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
+                                      return;
+                                    }
+
+                                    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Conductor y bus guardados correctamente')));
+                                  },
+                                  child: firestore.isLoading ? const CircularProgressIndicator() : const Text('Guardar'),
                                 )
                               ],
                             ),

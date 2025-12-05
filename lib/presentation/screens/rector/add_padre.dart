@@ -116,7 +116,7 @@ class AddPadre extends StatelessWidget {
 
                                 SizedBox(height: 20),
 
-                                Text( 'Estudiante' ),
+                                //Text( 'Estudiante' ),
 
                                 // SizedBox(height: 20),
 
