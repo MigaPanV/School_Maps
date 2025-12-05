@@ -5,6 +5,9 @@ class DatabaseEstudianteModel{
 
   final String nombreEstudiante;
   final int documento;
+  final int grado;
+  final double lat;
+  final double lng;
   bool recogido;
   final int cedulaAcudiente;
   final String placaRutaAsignada;
@@ -14,6 +17,9 @@ class DatabaseEstudianteModel{
 
     required this.nombreEstudiante,
     required this.documento,
+    required this.grado,
+    required this.lat,
+    required this.lng,
     required this.cedulaAcudiente,
     this.placaRutaAsignada = '',
     required this.direccion,
@@ -25,6 +31,9 @@ class DatabaseEstudianteModel{
     
     nombreEstudiante: firestore[ 'nombreEstudiante' ], 
     documento: firestore[ 'documentoEstudiante' ], 
+    grado: firestore[ 'grado' ],
+    lat: firestore[ 'lat' ], 
+    lng: firestore[ 'lng' ],
     cedulaAcudiente: firestore[ 'cedulaAcudiente' ], 
     placaRutaAsignada: firestore[ 'placa' ], 
     direccion: firestore[ 'direccion' ]
@@ -33,6 +42,9 @@ class DatabaseEstudianteModel{
   Map<String, dynamic> toFirestore() => {
     'nombreEstudiante' : nombreEstudiante,
     'documentoEstudiante' : documento,
+    'grado' : grado,
+    'lat': lat,
+    'lng': lng,    
     'cedulaAcudiente' : cedulaAcudiente,
     'placa' : placaRutaAsignada,
     'direccion' : direccion,
@@ -42,6 +54,9 @@ class DatabaseEstudianteModel{
     
     nombreEstudiante: nombreEstudiante, 
     documento: documento, 
+    grado: grado,
+    lat: lat,
+    lng: lng,
     cedulaAcudiente: cedulaAcudiente, 
     placaRutaAsignada: placaRutaAsignada, 
     direccion: direccion

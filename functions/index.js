@@ -133,7 +133,6 @@ exports.computeRoute = onRequest(
   async (req, res) => {
     try {
       const API_KEY = mapsApiKey.value();
-
       const body = req.method === "POST" ? req.body : req.query;
 
       const origin = body.origin;
@@ -144,18 +143,12 @@ exports.computeRoute = onRequest(
         return res.status(400).json({ error: "Origin and destination required" });
       }
 
-      // Construimos los waypoints
+      // Intermediates correctos
       const intermediates = stops.map((s) => ({
-        location: {
-          latLng: {
-            latitude: s.lat,
-            longitude: s.lng,
-          },
-        },
+        location: { latLng: { latitude: s.lat, longitude: s.lng } }
       }));
 
-      const url =
-        `https://routes.googleapis.com/directions/v2:computeRoutes`;
+      const url = "https://routes.googleapis.com/directions/v2:computeRoutes";
 
       const response = await axios({
         method: "POST",
@@ -163,37 +156,27 @@ exports.computeRoute = onRequest(
         headers: {
           "Content-Type": "application/json",
           "X-Goog-Api-Key": API_KEY,
-          "X-Goog-FieldMask": "routes.polyline.encodedPolyline",
+          "X-Goog-FieldMask": "routes.polyline.encodedPolyline"
         },
         data: {
           origin: {
-            location: {
-              latLng: {
-                latitude: origin.lat,
-                longitude: origin.lng,
-              },
-            },
+            location: { latLng: { latitude: origin.lat, longitude: origin.lng } }
           },
           destination: {
-            location: {
-              latLng: {
-                latitude: destination.lat,
-                longitude: destination.lng,
-              },
-            },
+            location: { latLng: { latitude: destination.lat, longitude: destination.lng } }
           },
           intermediates: intermediates,
           travelMode: "DRIVE",
-          optimizeWaypoints: true,
-        },
+          polylineEncoding: "ENCODED_POLYLINE", // <-- NECESARIO
+        }
       });
 
       return res.status(200).json({
-        polyline: response.data.routes[0].polyline.encodedPolyline,
+        polyline: response.data.routes[0].polyline.encodedPolyline
       });
 
     } catch (err) {
-      console.error("ROUTE ERROR", err.message);
+      console.error("ROUTE ERROR", err);
       return res.status(500).json({ error: err.message });
     }
   }
