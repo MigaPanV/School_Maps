@@ -1,4 +1,10 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
+import 'package:provider/provider.dart';
+import 'package:school_maps/presentation/provider/auth_provider.dart';
+import 'package:school_maps/presentation/provider/firestore_provider.dart';
 import 'package:school_maps/presentation/screens/conductor/conductor_est.dart';
 import 'package:school_maps/presentation/screens/conductor/conductor_finRuta.dart';
 import 'package:school_maps/presentation/screens/maps/route_tracking_page.dart';
@@ -132,7 +138,10 @@ class _CondScreenState extends State<CondScreen> {
 
   @override
   Widget build(BuildContext context) {
-    // AuthProvider authProvider = context.watch<AuthProvider>();
+    final AuthProvider authProvider = context.watch<AuthProvider>();
+    final FirestoreProvider firestoreProvider = context.watch<FirestoreProvider>();
+
+    final user = authProvider.user;
 
     return SafeArea(
       child: Scaffold(
@@ -158,7 +167,7 @@ class _CondScreenState extends State<CondScreen> {
                     );
                   },
                   child: const CircleAvatar(
-                    backgroundImage: AssetImage('assets/images/login.jpg'),
+                    backgroundImage: AssetImage('assets/images/logo.jpg'),
                     radius: 30,
                   ),
                 ),
@@ -166,63 +175,178 @@ class _CondScreenState extends State<CondScreen> {
             ),
           ],
         ),
-        body: Column(
-          children: [
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  FilledButton(
-                    onPressed: () => _mostrarVentanaReportes(context),
-                    child: const Text('Reportes'),
+        body: FutureBuilder(
+          future: firestoreProvider.getUserData( user!.uid ),
+          builder: (context, snapshot) {
+
+
+            if (snapshot.connectionState == ConnectionState.waiting) {
+              return const Center(child: CircularProgressIndicator());
+            }
+        
+            if (snapshot.hasError) {
+              return Center(
+                child: Text("Error: ${snapshot.error}"),
+              );
+            }
+        
+            if (!snapshot.hasData || snapshot.data == null) {
+              return const Center(
+                child: Text("No se encontraron datos del usuario"),
+              );
+            }
+
+            final usuario = snapshot.data!;
+            return Column(
+              children: [
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      FilledButton(
+                        onPressed: () => _mostrarVentanaReportes(context),
+                        child: const Text('Reportes'),
+                      ),
+                      FilledButton(
+                        onPressed: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(builder: (context) => const ConductorEst()),
+                          );
+                        },
+                        child: const Text('Estudiantes'),
+                      ),
+                    ],
                   ),
-                  FilledButton(
-                    onPressed: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(builder: (context) => const ConductorEst()),
-                      );
-                    },
-                    child: const Text('Estudiantes'),
+                ),
+            
+                Expanded(
+                  child: Center(
+                    child: RouteTrackingPage()
                   ),
-                ],
-              ),
-            ),
-
-            Expanded(
-              child: Center(
-                child: RouteTrackingPage()
-              ),
-            ),
-
-            const Text(
-              'Ruta N°',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.w500),
-            ),
-            const SizedBox(height: 10),
-
-            Center(
-              child: SizedBox(
-                width: MediaQuery.of(context).size.width * 0.4,
-                child: FilledButton(
-                  onPressed: () {},
-                  child: const Text('Iniciar ruta'),
                 ),
-              ),
-            ),
-            const SizedBox(height: 10),
-            Center(
-              child: SizedBox(
-                width: MediaQuery.of(context).size.width * 0.4,
-                child: FilledButton(
-                  onPressed: () => _mostrarConfirmacionFinRuta(context),
-                  child: const Text('Finalizar ruta'),
+            
+                const Text(
+                  'Ruta N°',
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.w500),
                 ),
-              ),
-            ),
-            const SizedBox(height: 20),
-          ],
+                const SizedBox(height: 10),
+            
+                Center(
+                  child: SizedBox(
+                    width: MediaQuery.of(context).size.width * 0.4,
+                    child: FilledButton(
+                      onPressed: () async {
+                        try {
+                          showDialog(
+                            context: context,
+                            barrierDismissible: false,
+                            builder: (_) => const Center(child: CircularProgressIndicator()),
+                          );
+            
+                          final res = await http.post(
+                            Uri.parse(
+                              "https://us-central1-school-maps-e69f3.cloudfunctions.net/createRouteIda",
+                            ),
+                            headers: {"Content-Type": "application/json"},
+                            body: jsonEncode({"placa": usuario.placaRutaAsignada }),
+                          );
+            
+                          Navigator.of(context).pop(); // Cerrar loading
+            
+                          if (res.statusCode == 200) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(content: Text("Ruta de IDA generada correctamente")),
+                            );
+                          } else {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text("Error: ${res.body}"),
+                                backgroundColor: Colors.red,
+                              ),
+                            );
+                          }
+                        } catch (e) {
+                          Navigator.of(context).pop(); 
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text("Error inesperado: $e"),
+                              backgroundColor: Colors.red,
+                            ),
+                          );
+                        }
+                      },
+                      child: const Text('Ruta Parada → Colegio'),
+                    ),
+                  ),
+                ),
+            
+                const SizedBox(height: 10),
+            
+                Center(
+                  child: SizedBox(
+                    width: MediaQuery.of(context).size.width * 0.4,
+                    child: FilledButton(
+                      onPressed: () async {
+                        try {
+                          showDialog(
+                            context: context,
+                            barrierDismissible: false,
+                            builder: (_) => const Center(child: CircularProgressIndicator()),
+                          );
+            
+                          final res = await http.post(
+                            Uri.parse(
+                              "https://us-central1-school-maps-e69f3.cloudfunctions.net/createRouteVuelta",
+                            ),
+                            headers: {"Content-Type": "application/json"},
+                            body: jsonEncode({"placa": usuario.placaRutaAsignada}),
+                          );
+            
+                          Navigator.of(context).pop(); 
+            
+                          if (res.statusCode == 200) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(content: Text("Ruta de VUELTA generada correctamente")),
+                            );
+                          } else {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text("Error: ${res.body}"),
+                                backgroundColor: Colors.red,
+                              ),
+                            );
+                          }
+                        } catch (e) {
+                          Navigator.of(context).pop(); 
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text("Error inesperado: $e"),
+                              backgroundColor: Colors.red,
+                            ),
+                          );
+                        }
+                      },
+                      child: const Text('Ruta Colegio → Paradas'),
+                    ),
+                  ),
+                ),
+            
+                const SizedBox(height: 10),
+                Center(
+                  child: SizedBox(
+                    width: MediaQuery.of(context).size.width * 0.4,
+                    child: FilledButton(
+                      onPressed: () => _mostrarConfirmacionFinRuta(context),
+                      child: const Text('Finalizar ruta'),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 20),
+              ],
+            );
+          }
         ),
       ),
     );

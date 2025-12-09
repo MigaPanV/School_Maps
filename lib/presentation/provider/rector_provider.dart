@@ -10,9 +10,11 @@ import 'package:school_maps/constants.dart';
 import 'package:school_maps/domain/entities/bus.dart';
 import 'package:school_maps/domain/entities/padre.dart';
 import 'package:school_maps/presentation/provider/firestore_provider.dart';
+import 'package:school_maps/presentation/provider/route_provider.dart';
 import 'package:school_maps/presentation/screens/rector/create_route_page.dart';
 
 class RectorProvider with ChangeNotifier {
+
 
   List<String> puntosRuta = [];
   String puntoRuta = '';
@@ -22,74 +24,93 @@ class RectorProvider with ChangeNotifier {
   String? errorPopup;
 
   List<String> seleccionadas = [];
+  String busSeleccionado = '';
 
   final List<Map<String, dynamic>> tempPuntos = [];
 
   void mostrarRutas( BuildContext context, Future<List<Bus>> opcionesFuture, List seleccionadas,) {
-  showModalBottomSheet(
-    context: context,
-    builder: (_) {
-      return StatefulBuilder(
-        builder: (context, setModalState) {
-          return Container(
-            padding: const EdgeInsets.all(20.0),
-            child: FutureBuilder<List<Bus>>(
-              future: opcionesFuture,
-              builder: (context, snapshot) {
-                if (!snapshot.hasData) {
-                  return const Center(child: CircularProgressIndicator());
-                }
 
-                final opciones = snapshot.data!;
+    final firestore = context.watch<FirestoreProvider>();
+    final routes = context.watch<RouteProvider>();
+    showModalBottomSheet(
+      context: context,
+      builder: (_) {
+        return StatefulBuilder(
+          builder: (context, setModalState) {
+            return Container(
+              padding: const EdgeInsets.all(20.0),
+              child: FutureBuilder<List<Bus>>(
+                future: opcionesFuture,
+                builder: (context, snapshot) {
+                  if (!snapshot.hasData) {
+                    return const Center(child: CircularProgressIndicator());
+                  }
 
-                return Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const Text(
-                      'Rutas Disponibles',
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.black,
+                  final opciones = snapshot.data!;
+
+                  return Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Text(
+                        'Rutas Disponibles',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.black,
+                        ),
                       ),
-                    ),
-                    const SizedBox(height: 12),
+                      const SizedBox(height: 12),
 
-                    ...opciones.map((opcion) {
-                      final seleccionada = seleccionadas.contains(opcion.placa);
-                      return CheckboxListTile(
-                        title: Text(opcion.placa),
-                        value: seleccionada,
-                        onChanged: (valor) {
-                          setModalState(() {
-                            if (valor == true) {
-                              seleccionadas.add(opcion.placa);
-                              notifyListeners();
-                            } else {
-                              seleccionadas.remove(opcion.placa);
-                              notifyListeners();
-                            }
-                          });
+                      ...opciones.map((opcion) {
+                        final seleccionada = seleccionadas.contains(opcion.placa);
+                        return CheckboxListTile(
+                          title: Text(opcion.placa),
+                          value: seleccionada,
+                          onChanged: (valor) {
+                            setModalState(() {
+                              if (valor == true) {
+                                seleccionadas.add(opcion.placa);
+                                busSeleccionado = opcion.placa;
+                                notifyListeners();
+                              } else {
+                                seleccionadas.remove(opcion.placa);
+                                notifyListeners();
+                              }
+                            });
+                          },
+                        );
+                      }),
+
+                      const SizedBox(height: 10),
+                      ElevatedButton(
+                        onPressed: () async { 
+
+
+                          final rutas = await firestore.getRutasDeBus(busSeleccionado);
+
+                          // Guardamos en el provider de rutas
+
+                          routes.setBusSeleccionado(busSeleccionado);
+                          routes.setRutaIda(rutas["rutaIda"]);
+                          routes.setRutaVuelta(rutas["rutaVuelta"]);
+  
+                          Navigator.pop(context);
+                        
                         },
-                      );
-                    }),
 
-                    const SizedBox(height: 10),
-                    ElevatedButton(
-                      onPressed: () => Navigator.pop(context),
-                      child: const Text('Aceptar'),
-                      
-                    ),
-                  ],
-                );
-              },
-            ),
-          );
-        },
-      );
-    },
-  );
-}
+                        child: const Text('Aceptar'),
+                        
+                      ),
+                    ],
+                  );
+                },
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
 
   void setPuntoRuta(String value) {
     puntoRuta = value.trim();

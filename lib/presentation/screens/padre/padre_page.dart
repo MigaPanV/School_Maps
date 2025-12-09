@@ -143,7 +143,7 @@ class _PadreScreenState extends State<PadreScreen> {
                     );
                   },
                   child: const CircleAvatar(
-                    backgroundImage: AssetImage('assets/images/login.jpg'),
+                    backgroundImage: AssetImage('assets/images/logo.jpg'),
                     radius: 30,
                   ),
                 ),

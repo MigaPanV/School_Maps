@@ -23,13 +23,7 @@ class _AuthPageState extends State<AuthPage> {
 
       if (!authProvider.validateTextField()) return;
 
-      if (authProvider.isLogin) {
         await authProvider.signIn();
-      } else {
-        await authProvider.register(authProvider.email, authProvider.password);
-        await authProvider.signOut();
-        authProvider.toggleIsLogin();
-      }
       
       if (!mounted) return;
       
@@ -53,13 +47,12 @@ class _AuthPageState extends State<AuthPage> {
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Text(
-                          authProvider.isLogin ? 'Iniciar sesión' : 'Registrarse',
+                        Text('Iniciar sesión' ,
                           style: const TextStyle(fontSize: 30, fontWeight: FontWeight.w500),
                         ),
                         const SizedBox(height: 50),
                         CircleAvatar(
-                          backgroundImage: Image.asset( 'assets/images/login.jpg' ).image,
+                          backgroundImage: Image.asset( 'assets/images/logo.jpg' ).image,
                           radius: 100,
                       
                         ),
@@ -123,17 +116,9 @@ class _AuthPageState extends State<AuthPage> {
 
                         ElevatedButton(
                           onPressed: handleAuth,
-                          child: Text(authProvider.isLogin ? 'Iniciar sesión' : 'Registrarse'),
+                          child: Text( 'Iniciar sesión' ),
                         ),
 
-                        TextButton(
-                          onPressed: authProvider.toggleIsLogin,
-                          child: Text(
-                            authProvider.isLogin
-                                ? '¿No tienes cuenta? Regístrate'
-                                : '¿Ya tienes cuenta? Inicia sesión',
-                          ),
-                        ),
                         const SizedBox(height: 50),
                       ],
                     ),

@@ -1,10 +1,10 @@
 import 'dart:convert';
-
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:http/http.dart' as http;
+import 'package:provider/provider.dart';
 import 'package:school_maps/constants.dart';
 import 'package:school_maps/domain/entities/bus.dart';
 import 'package:school_maps/domain/entities/conductor.dart';
@@ -16,6 +16,7 @@ import 'package:school_maps/infrastruture/model/database_estudiante_model.dart';
 import 'package:school_maps/infrastruture/model/database_padre_model.dart';
 import 'package:cloud_functions/cloud_functions.dart';
 import 'package:collection/collection.dart';
+import 'package:school_maps/presentation/provider/route_provider.dart';
 
 
 class FirestoreProvider extends ChangeNotifier {
@@ -72,21 +73,21 @@ class FirestoreProvider extends ChangeNotifier {
 
 
   void limpiarErrores() {
-  errorNombre = null;
-  errorDocumento = null;
-  errorCorreo = null;
-  errorDireccion = null;
-  errorDocumentoHijo = null;
-  errorPlaca = null;
-  errorGeneral = null;
-  errorNombreConductor = null;
-  errorDocumentoConductor = null;
-  errorCorreoConductor = null;
-  errorFechaLicencia = null;
-  errorPlacaConductor = null;
+    errorNombre = null;
+    errorDocumento = null;
+    errorCorreo = null;
+    errorDireccion = null;
+    errorDocumentoHijo = null;
+    errorPlaca = null;
+    errorGeneral = null;
+    errorNombreConductor = null;
+    errorDocumentoConductor = null;
+    errorCorreoConductor = null;
+    errorFechaLicencia = null;
+    errorPlacaConductor = null;
 
-  notifyListeners();
-}
+    notifyListeners();
+  }
 
   void getNombreAcudiente( String value ) {
     nombrePadre = value.trim();
@@ -95,16 +96,16 @@ class FirestoreProvider extends ChangeNotifier {
   }
 
   void getDocumentoAcudiente(String value) {
-  final parsed = int.tryParse(value.trim());
-  if (parsed == null) {
-    documentoPadre = 0;
-    errorDocumento = "Documento inválido";
-  } else {
-    documentoPadre = parsed;
-    errorDocumento = null;
+    final parsed = int.tryParse(value.trim());
+    if (parsed == null) {
+      documentoPadre = 0;
+      errorDocumento = "Documento inválido";
+    } else {
+      documentoPadre = parsed;
+      errorDocumento = null;
+    }
+    notifyListeners();
   }
-  notifyListeners();
-}
 
   void getCorreoAcudiente( String value ){
     correo = value;
@@ -474,16 +475,18 @@ void resetConductorFormulario() {
     }
   }
 
-  Future<void> addEstudiante() async {
+  Future<void> addEstudiante( BuildContext context ) async {
     if (!validateEstudianteForm()) return;
 
     try {
+
+      final routes = Provider.of<RouteProvider>(context, listen: false);
       isLoading = true;
       isUploaded = false;
       errorGeneral = null;
       notifyListeners();
 
-      LatLng? coords = await geocodeAddress(direccion);
+      LatLng? coords = await routes.geocodeAddress(direccion);
 
         if (coords == null) {
         errorGeneral = "No se pudo encontrar la dirección.";
@@ -809,98 +812,170 @@ void resetConductorFormulario() {
     }
   }
   Future<void> guardarRutaGenerada({
-    required String placaBus,
-    required int capacidadBus,
-    required List<Estudiante> estudiantes,
-  }) async {
+  required String placaBus,
+  required List<Estudiante> estudiantesNuevos,
+  required int capacidadBus,
+}) async {
+  try {
+    final firestore = FirebaseFirestore.instance;
 
-    final rutaDoc = await firestore.collection("RutasGeneradas").doc(placaBus).get();
+    // ===================================================
+    // 1️⃣ Cargar paradas existentes (si existen)
+    // ===================================================
+    final existingDoc = await firestore
+        .collection("RutasGeneradas")
+        .doc(placaBus)
+        .collection("ida")
+        .doc("ruta")
+        .get();
 
-    int cantidadActual = 0;
+    List<Map<String, dynamic>> paradasPrevias = [];
 
-    if (rutaDoc.exists) {
-      final data = rutaDoc.data()!;
-      final listaActual = (data['estudiantes'] as List?) ?? [];
-      cantidadActual = listaActual.length;
-    }
-
-    final cantidadNueva = estudiantes.length;
-    final total = cantidadActual + cantidadNueva;
-
-    if (total > capacidadBus) {
-      throw Exception(
-        "La ruta ya tiene $cantidadActual estudiantes. "
-        "No puedes agregar $cantidadNueva más porque superan la capacidad del bus ($capacidadBus)."
+    if (existingDoc.exists && existingDoc.data()!.containsKey("paradas")) {
+      paradasPrevias = List<Map<String, dynamic>>.from(
+        existingDoc.data()!["paradas"],
       );
     }
 
-    /// --- 2. Preparar estudiantes nuevos a agregar ---
-    List<Map<String, dynamic>> estudiantesParaAgregar = estudiantes.map((e) {
+    // ===================================================
+    // 2️⃣ Convertir estudiantes nuevos en paradas nuevas
+    // ===================================================
+    List<Map<String, dynamic>> paradasNuevas = estudiantesNuevos.map((e) {
       return {
-        "nombre": e.nombreEstudiante,
-        "documento": e.documento,
-        "direccion": e.direccion,
-        "cedulaAcudiente": e.cedulaAcudiente,
+        "lat": e.lat,
+        "lng": e.lng,
       };
     }).toList();
 
+    // ===================================================
+    // 3️⃣ Unir paradas previas + nuevas (sin duplicados)
+    // ===================================================
+    List<Map<String, dynamic>> todasLasParadas = [
+      ...paradasPrevias,
+      ...paradasNuevas,
+    ];
 
-    /// --- 3. Crear o actualizar la ruta CONTINUANDO la lista ---
-    if (!rutaDoc.exists) {
-      /// Si la ruta NO existe → la creamos
-      await firestore.collection("RutasGeneradas").doc(placaBus).set({
-        "placa": placaBus,
-        "fechaCreacion": DateTime.now(),
-        "estudiantes": estudiantesParaAgregar,
-      });
-    } else {
-      /// Si la ruta ya existe → agregamos SIN sobrescribir
-      await firestore.collection("RutasGeneradas").doc(placaBus).update({
-        "estudiantes": FieldValue.arrayUnion(estudiantesParaAgregar),
-      });
+    // Eliminar duplicados
+    todasLasParadas = {
+      for (var p in todasLasParadas)
+        "${p['lat']}_${p['lng']}": p
+    }.values.toList();
+
+    // Ordenar paradas opcionalmente (si lo deseas):
+    // por ejemplo por lat, para que no estén desordenados
+    // todasLasParadas.sort((a,b)=> a["lat"].compareTo(b["lat"]));
+
+    if (todasLasParadas.length < 2) {
+      throw "Se necesitan mínimo 2 paradas para generar ruta";
     }
 
-
-    /// ASIGNAR PLACA A CADA ESTUDIANTE Y ACUDIENTE
-    for (final est in estudiantes) {
-      final estudianteRef = firestore.collection("Estudiantes").doc(est.documento.toString());
-      final acudienteQuery = await firestore
-          .collection("Acudientes")
-          .where('documentoPadre', isEqualTo: est.cedulaAcudiente)
-          .limit(1)
-          .get();
-
-      /// ACTUALIZAR ESTUDIANTE
-      await estudianteRef.update({
-        'placa': placaBus,
-      });
-
-      /// ACTUALIZAR ACUDIENTE (SI EXISTE)
-      if (acudienteQuery.docs.isNotEmpty) {
-        await acudienteQuery.docs.first.reference.update({
-          'placa': placaBus,
-        });
-      }
-    }
-  }
-
-  Future<LatLng?> geocodeAddress(String address) async {
-    final apiKey = google_api_key;
-    final encoded = Uri.encodeQueryComponent(address);
+    // ===================================================
+    // 4️⃣ Llamar Cloud Function con TODAS las paradas
+    // ===================================================
     final url = Uri.parse(
-      "https://maps.googleapis.com/maps/api/geocode/json?address=$encoded&key=$apiKey"
+      "https://us-central1-school-maps-e69f3.cloudfunctions.net/computeRoute",
     );
 
-    final response = await http.get(url);
-
-    if (response.statusCode != 200) return null;
+    final response = await http.post(
+      url,
+      headers: {"Content-Type": "application/json"},
+      body: jsonEncode({
+        "origin": todasLasParadas.first,
+        "destination": todasLasParadas.last,
+        "stops": todasLasParadas,
+      }),
+    );
 
     final data = jsonDecode(response.body);
 
-    if (data["status"] != "OK") return null;
+    if (!data.containsKey("polyline")) {
+      throw "No se generó polyline";
+    }
 
-    final location = data["results"][0]["geometry"]["location"];
+    // ===================================================
+    // 5️⃣ Guardar ruta sin borrar la anterior
+    // ===================================================
+    await firestore
+        .collection("RutasGeneradas")
+        .doc(placaBus)
+        .collection("ida")
+        .doc("ruta")
+        .set({
+      "polyline": data["polyline"],
+      "paradas": todasLasParadas,
+      "timestamp": DateTime.now(),
+    }, SetOptions(merge: true));
 
-    return LatLng(location["lat"], location["lng"]);
+    // ===================================================
+    // 6️⃣ Actualizar placa en Estudiantes y Acudientes
+    // ===================================================
+    for (var est in estudiantesNuevos) {
+      // Actualizar estudiante
+      await firestore
+          .collection("Estudiantes")
+          .doc(est.documento.toString())
+          .update({"placa": placaBus});
+
+      // Buscar acudiente
+      final acudienteQuery = await firestore
+          .collection("Acudientes")
+          .where("documentoPadre", isEqualTo: est.cedulaAcudiente)
+          .limit(1)
+          .get();
+
+      if (acudienteQuery.docs.isNotEmpty) {
+        await acudienteQuery.docs.first.reference.update({
+          "placa": placaBus,
+        });
+      }
+    }
+
+    print("RUTA ACTUALIZADA CORRECTAMENTE SIN PERDER PUNTOS");
+
+  } catch (e) {
+    print("ERROR AL GUARDAR RUTA: $e");
   }
+}
+
+  Future<List<Map<String, dynamic>>> getEstudiantesRuta( String placa ) async{
+
+    final firestore = FirebaseFirestore.instance;
+
+    final snapshot = await firestore.collection( 'RutasGeneradas' ).where( 'placa', isEqualTo: placa ).limit( 1 ).get();
+
+    if ( snapshot.docs.isEmpty ) return [];
+
+    final data = snapshot.docs.first.data();
+    final List estudiantes = data[ 'estudiantes' ];
+
+    return estudiantes.map( (e) => e as Map<String, dynamic> ).toList();
+
+  }
+
+  Future<void> guardarRutaIda(String placa, String polyline, List<Map<String, dynamic>> paradas) async {
+    await FirebaseFirestore.instance
+        .collection("Buses")
+        .doc(placa)
+        .update({
+      "rutaIda": {
+        "polyline": polyline,
+        "paradas": paradas
+      }
+    });
+  }
+
+  Future<Map<String, dynamic>> getRutasDeBus(String placa) async {
+    final doc = await FirebaseFirestore.instance
+        .collection("Buses")
+        .doc(placa)
+        .get();
+
+    final data = doc.data();
+
+    return {
+      "rutaIda": data?["rutaIda"],
+      "rutaVuelta": data?["rutaVuelta"]
+    };
+  }
+
 }

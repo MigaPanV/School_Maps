@@ -156,7 +156,7 @@ class AddEstudiante extends StatelessWidget {
                             
                                 ElevatedButton(
                                   onPressed: () async{
-                                    await firestore.addEstudiante();
+                                    await firestore.addEstudiante( context );
                                   },
                                   child: Text('Guardar'),
                                 ),

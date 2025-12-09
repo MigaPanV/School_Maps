@@ -9,6 +9,10 @@ import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:location/location.dart';
 import 'package:http/http.dart' as http;
+import 'package:provider/provider.dart';
+import 'package:school_maps/presentation/provider/auth_provider.dart';
+import 'package:school_maps/presentation/provider/firestore_provider.dart';
+import 'package:school_maps/presentation/provider/route_provider.dart';
 
 
 class RouteTrackingPage extends StatefulWidget {
@@ -224,43 +228,91 @@ class _RouteTrackingPageState extends State<RouteTrackingPage> {
 
   @override
   Widget build(BuildContext context) {
+
+    final routes = context.watch<RouteProvider>();
+    final AuthProvider authProvider = context.watch<AuthProvider>();
+    final FirestoreProvider firestoreProvider = context.watch<FirestoreProvider>();
+
+    final ruta = routes.mostrarIda
+        ? routes.rutaIda
+        : routes.rutaVuelta;
+
+    final polyline = ruta?["polyline"];
+    final paradas = ruta?["paradas"];
+    final conductor = routes.ubicacionConductor;
+    final user = authProvider.user;
+
     return Scaffold(
       body: currentLocation == null
           ? Center(child: Text('Cargando...'))
-          : GoogleMap(
+          : FutureBuilder(
+            future: firestoreProvider.getUserData( user!.uid ),
+            builder: (context, snapshot) {
+              final usuario = snapshot.data;
+
+              return Stack(
+                    children: [
+                      GoogleMap(
               initialCameraPosition: CameraPosition(
-                target: LatLng(
-                  currentLocation!.latitude!,
-                  currentLocation!.longitude!,
-                ),
-                zoom: 14.5,
+                target: routes.polylinePoints.isNotEmpty
+                    ? routes.polylinePoints.first
+                    : const LatLng(4.15, -73.63),
+                zoom: 14,
               ),
-              polylines: polylines,
-              markers: markers,
-              // {
-              //   Marker(
-              //     markerId: MarkerId('currentLocation'),
-              //     icon: currentLocationIcon,
-              //     position: LatLng(
-              //       currentLocation!.latitude!,
-              //       currentLocation!.longitude!,
-              //     ),
-              //   ),
-              //   Marker(
-              //     markerId: MarkerId('source'),
-              //     icon: sourceIcon,
-              //     position: sourceLocation,
-              //   ),
-              //   Marker(
-              //     markerId: MarkerId('destination'),
-              //     icon: destinationIcon,
-              //     position: destination,
-              //   ),
-              // },
-              onMapCreated: (controller) {
-                _mapController = controller;
+              
+              polylines: {
+                Polyline(
+                  polylineId: const PolylineId("ruta"),
+                  width: 6,
+                  color: Colors.blue,
+                  points: routes.polylinePoints,
+                )
               },
-            ),
+              
+              markers: routes.paradas
+                  .map(
+                    (p) => Marker(
+                      markerId: MarkerId("${p.latitude}-${p.longitude}"),
+                      position: p,
+                    ),
+                  )
+                  .toSet(),
+                      ),
+              
+                      /// BOTONES PARA CARGAR RUTA
+                      Positioned(
+              top: 40,
+              left: 20,
+              child: Column(
+                children: [
+                  FloatingActionButton(
+                    heroTag: "ida",
+                    onPressed: () async {
+                      await routes.cargarRuta(
+                        placa:usuario.placaRutaAsignada,
+                        tipoRuta:   "ida",
+                      );
+                    },
+                    child: const Icon(Icons.arrow_forward),
+                  ),
+                  const SizedBox(height: 10),
+                  FloatingActionButton(
+                    heroTag: "vuelta",
+                    onPressed: () async {
+                      await routes.cargarRuta(
+                        placa: usuario.placaRutaAsignada,
+                        tipoRuta: "vuelta",
+                      );
+                    },
+                    child: const Icon(Icons.arrow_back),
+                  ),
+                ],
+              ),
+                      )
+                    ],
+                  );
+            }
+          ),
     );
   }
 }

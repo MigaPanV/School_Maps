@@ -64,7 +64,7 @@ class _CrearRutaState extends State<CrearRuta> {
 
     await firestore.guardarRutaGenerada(
       placaBus: busSeleccionado!.placa,
-      estudiantes: seleccionados,
+      estudiantesNuevos: seleccionados,
       capacidadBus: busSeleccionado!.capacidad
     );
 
